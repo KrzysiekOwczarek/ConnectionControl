@@ -35,6 +35,7 @@ namespace ConnectionControl
             public int userCap;
             public bool canReq;
             public String userType;
+            public List<NodeMapping> userMappings;
 
             public userData(string userName, Address userAddr, int userCap, bool canReq, string userType)
             {
@@ -43,6 +44,7 @@ namespace ConnectionControl
                 this.userCap = userCap;
                 this.canReq = canReq;
                 this.userType = userType;
+                this.userMappings = new List<NodeMapping>();
             }
         }
 
@@ -50,23 +52,23 @@ namespace ConnectionControl
         //DODAC INDEXAMI MAPPINGI DO ZALOGOWANYCH WEZŁÓW?
         private class NodeMapping
         {
-            public string nodeAddr;
             public string incomingAddr; //z MSG ROUTE
             public string outcomingAddr; //z MSG ROUTE
             public int incomingVP;
             public int incomingVC;
             public int outcomingVP;
             public int outcomingVC;
+            public bool toSend;
 
-            public NodeMapping(string nodeAddr, string incomingAddr, string outcomingAddr, int incomingVP, int incomingVC, int outcomingVP, int outcomingVC)
+            public NodeMapping(string incomingAddr, string outcomingAddr, int incomingVP, int incomingVC, int outcomingVP, int outcomingVC)
             {
-                this.nodeAddr = nodeAddr;
                 this.incomingAddr = incomingAddr;
                 this.outcomingAddr = outcomingAddr;
                 this.incomingVP = incomingVP;
                 this.incomingVC = incomingVC;
                 this.outcomingVP = outcomingVP;
                 this.outcomingVC = outcomingVC;
+                this.toSend = true;
             }
         }
 
@@ -216,79 +218,143 @@ namespace ConnectionControl
                         }
                         else if (_msgList[0] == "REQ_CONN")
                         {
-                            try
+                            if (_senderAddr.ToString() == "0.0.1")
                             {
-                                string src = _msgList[1];
-                                string dest = _msgList[2];
+                                try
+                                {
+                                    string src = _msgList[1];
+                                    string dest = _msgList[2];
 
-                                //COS Z TYM TRZEBA ZROBIC, MYSL CHUJU.
-                                string connId = _msgList[3];
+                                    //COS Z TYM TRZEBA ZROBIC, MYSL CHUJU.
+                                    string connId = _msgList[3];
 
-                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
-                                whatToSendQueue.Enqueue(pck);
-                                
+                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    whatToSendQueue.Enqueue(pck);
+
+                                }
+                                catch
+                                {
+                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN z NCC ma za mało danych?");
+                                    whatToSendQueue.Enqueue(pck);
+                                }
                             }
-                            catch
+                            else
                             {
-                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
-                                whatToSendQueue.Enqueue(pck);
+                                try
+                                {
+                                    string callID = _msgList[1];
+                                    string incomingAddr = _msgList[2];
+                                    string src = _msgList[3];
+                                    int vp = Convert.ToInt32(_msgList[4]);
+                                    int vc = Convert.ToInt32(_msgList[5]);
+                                    string dest = _msgList[6];
+
+
+                                    
+                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    whatToSendQueue.Enqueue(pck);
+
+                                }
+                                catch
+                                {
+                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN z innego CC ma za mało danych?");
+                                    whatToSendQueue.Enqueue(pck);
+                                }
                             }
 
                         }
                         else if(_msgList[0] == "ROUTE")
                         {
-                            List<NodeMapping> myNodeMappings = new List<NodeMapping>();
-
+                            
                             try
                             {
+                                
                                 for (int i = 1; i < _msgList.Count(); i++ )
                                 {
-                                    string s = _msgList[i];
-                                    string prev_s = _msgList[i - 1];
-                                    string next_s = _msgList[i + 1];
+                                    userData tempUser = null;
+                                    NodeMapping mapping = null;
+                                    bool userFound = false;
 
-                                    if (!s.Contains('*'))
+                                    string s = _msgList[i];
+                                    
+                                    foreach(userData us in userList)
                                     {
-                                        if (s.Contains(netNum + "." + subNetNum))
+                                        if(us.userAddr.ToString() == s)
                                         {
-                                            if (i == 1)
-                                                myNodeMappings.Add(new NodeMapping(s, null, next_s, 1, 1, 1, 1));
-                                            else
-                                                myNodeMappings.Add(new NodeMapping(s, prev_s, next_s, 1, 1, 1, 1));
+                                            tempUser = us;
+                                            userFound = true;
+                                            break;
                                         }
                                     }
-                                    else
-                                        break;
+
+                                    if (userFound)
+                                    {
+                                        try
+                                        {
+                                            string prev_s = _msgList[i - 1];
+                                            string next_s = _msgList[i + 1];
+
+                                            if (!s.Contains('*'))
+                                            {
+                                                if (s.Contains(netNum + "." + subNetNum))
+                                                {
+                                                    if (i == 1)
+                                                        mapping = new NodeMapping(null, next_s, 1, 1, 1, 1);
+                                                    else
+                                                        mapping = new NodeMapping(prev_s, next_s, 1, 1, 1, 1);
+                                                }
+
+                                                tempUser.userMappings.Add(mapping);
+                                            }
+                                            else
+                                                break;
+                                        }
+                                        catch
+                                        {
+                                            SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "Nie ma klienta o adresie: " + s);
+                                            whatToSendQueue.Enqueue(pck);
+                                        }
+
+                                    }
                                 }
 
-                                foreach (NodeMapping nodeMapping in myNodeMappings)
+
+                                //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
+                                foreach (userData us in userList)
                                 {
-                                    try
+                                    foreach (NodeMapping nodeMapping in us.userMappings)
                                     {
-                                        string msg;
+                                        if(nodeMapping.toSend == true)
+                                            try
+                                            {
+                                                string msg;
 
-                                        if(nodeMapping.incomingAddr == null)
-                                            msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
-                                        else
-                                            msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
-                                                + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                                                if(nodeMapping.incomingAddr == null)
+                                                    msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                                                else
+                                                    msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
+                                                        + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
 
-                                        //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
-                                        SPacket pck = new SPacket(myAddr.ToString(), nodeMapping.nodeAddr, msg );
-                                        whatToSendQueue.Enqueue(pck);
-                                    }
-                                    catch
-                                    {
-                                        SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
-                                        whatToSendQueue.Enqueue(pck);
+                                                //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
+                                                SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg );
+                                                whatToSendQueue.Enqueue(pck);
+
+                                                nodeMapping.toSend = false;
+                                            }
+                                            catch
+                                            {
+                                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
+                                                whatToSendQueue.Enqueue(pck);
+                                            }
                                     }
                                 }
+                                
 
                               
                             }
-                            catch
+                            catch(Exception e)
                             {
-                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR");
+                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR PODLACZYŁEŚ JAKIEŚ KLIENTY DEBILU?");
                                 whatToSendQueue.Enqueue(pck);
                             }
                         }
