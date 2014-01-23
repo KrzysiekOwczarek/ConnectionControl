@@ -127,6 +127,7 @@
             // 
             this.log.Location = new System.Drawing.Point(15, 217);
             this.log.Name = "log";
+            this.log.ReadOnly = true;
             this.log.Size = new System.Drawing.Size(376, 96);
             this.log.TabIndex = 9;
             this.log.Text = "";

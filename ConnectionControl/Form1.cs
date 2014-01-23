@@ -218,6 +218,7 @@ namespace ConnectionControl
                         }
                         else if (_msgList[0] == "REQ_CONN")
                         {
+                            //Z NCC
                             if (_senderAddr.ToString() == "0.0.1")
                             {
                                 try
@@ -238,6 +239,7 @@ namespace ConnectionControl
                                     whatToSendQueue.Enqueue(pck);
                                 }
                             }
+                            // Z CC
                             else
                             {
                                 try
@@ -249,7 +251,24 @@ namespace ConnectionControl
                                     int vc = Convert.ToInt32(_msgList[5]);
                                     string dest = _msgList[6];
 
+                                    userData tempUser = null;
+                                    bool userFound = false;
 
+                                    foreach (userData us in userList)
+                                    {
+                                        if (us.userAddr.ToString() == src)
+                                        {
+                                            tempUser = us;
+                                            userFound = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if(userFound)
+                                    {
+                                        //DODANE ALE NIE WYSŁANE, WYSYŁA DOPIERO PO OTRZYMANIU ROUTE OD RC
+                                        tempUser.userMappings.Add(new NodeMapping(incomingAddr, null, 1, 1, 0, 0));
+                                    }
                                     
                                     SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
@@ -287,72 +306,105 @@ namespace ConnectionControl
                                         }
                                     }
 
-                                    if (userFound)
+                                    
+                                    try
                                     {
-                                        try
-                                        {
-                                            string prev_s = _msgList[i - 1];
-                                            string next_s = _msgList[i + 1];
+                                        string prev_s = null;
+                                        string next_s = null;
 
-                                            if (!s.Contains('*'))
+                                        if(i > 0)
+                                            prev_s = _msgList[i - 1];
+
+                                        if((i+1) < _msgList.Count())
+                                            next_s = _msgList[i + 1];
+
+                                        if (!s.Contains('*'))
+                                        {
+                                            if (s.Contains(netNum + "." + subNetNum))
                                             {
-                                                if (s.Contains(netNum + "." + subNetNum))
+                                                if (userFound)
                                                 {
                                                     if (i == 1)
-                                                        mapping = new NodeMapping(null, next_s, 1, 1, 1, 1);
+                                                    {
+                                                        try
+                                                        {
+                                                            //SPRÓBUJ ZNALEŹC MAPPING KTORY MOZE ZOSTAL CZESCIOWO WYPELNIONY POPRZEZ REQ_CONN Z INNEGO CC JESLI TAKI JEST TO UZUPELNIJ GO OUTCOMINGAMI
+                                                            //SPRAWDZ JESZCZE CZY MA TAK NIE BYC BO TO KLIENT DO KTOREGO DZWONIMY (KONCOWY NODE)
+                                                            if (tempUser.userAddr.ToString() != "1.3.3" && tempUser.userMappings.Count() != 0)
+                                                            {
+
+                                                                foreach (NodeMapping nm in tempUser.userMappings)
+                                                                {
+                                                                    if (nm.outcomingAddr == null && nm.incomingAddr != null && nm.toSend == true)
+                                                                    {
+                                                                        mapping = nm;
+                                                                    }
+                                                                }
+
+
+                                                            }
+                                                        }
+                                                        catch
+                                                        {
+                                                            SetText("Cos z mappingiem z CC");
+                                                        }
+
+                                                        try
+                                                        {
+                                                            if (mapping != null)
+                                                            {
+                                                                mapping.outcomingAddr = next_s;
+                                                                mapping.outcomingVP = 1;
+                                                                mapping.outcomingVC = 1;
+                                                            }
+                                                            else
+                                                                mapping = new NodeMapping(null, next_s, 1, 1, 1, 1);
+                                                        }
+                                                        catch
+                                                        {
+                                                            SetText("Cos z ustawieniami");
+                                                        }
+                                                    }
                                                     else
                                                         mapping = new NodeMapping(prev_s, next_s, 1, 1, 1, 1);
+
+
+                                                    try
+                                                    {
+                                                        tempUser.userMappings.Add(mapping);
+                                                    }
+                                                    catch
+                                                    {
+                                                        SetText("Dodawanie jeblo");
+                                                    }
+
+                                                //TU ZAMKNIJ
                                                 }
-
-                                                tempUser.userMappings.Add(mapping);
+                                                else
+                                                    SetText("NIE MA KLIENTA O ADRESIE " + s);
                                             }
-                                            else
-                                                break;
-                                        }
-                                        catch
-                                        {
-                                            SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "Nie ma klienta o adresie: " + s);
-                                            whatToSendQueue.Enqueue(pck);
-                                        }
 
+                                           
+                                        }
+                                        else
+                                            break;
                                     }
-                                }
+                                    catch(Exception e)
+                                    {
+                                        SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "Nie wyszło " + e.ToString());
+                                        whatToSendQueue.Enqueue(pck);
+                                    }
 
+                                    
+                                }
 
                                 //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
-                                foreach (userData us in userList)
-                                {
-                                    foreach (NodeMapping nodeMapping in us.userMappings)
-                                    {
-                                        if(nodeMapping.toSend == true)
-                                            try
-                                            {
-                                                string msg;
-
-                                                if(nodeMapping.incomingAddr == null)
-                                                    msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
-                                                else
-                                                    msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
-                                                        + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
-
-                                                //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
-                                                SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg );
-                                                whatToSendQueue.Enqueue(pck);
-
-                                                nodeMapping.toSend = false;
-                                            }
-                                            catch
-                                            {
-                                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
-                                                whatToSendQueue.Enqueue(pck);
-                                            }
-                                    }
-                                }
+                                sendMappingsToNodes();
                                 
 
                               
                             }
-                            catch(Exception e)
+                            catch
                             {
                                 SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR PODLACZYŁEŚ JAKIEŚ KLIENTY DEBILU?");
                                 whatToSendQueue.Enqueue(pck);
@@ -495,6 +547,92 @@ namespace ConnectionControl
             }
         }
 
+        /*public void fillMappings(List<string> _msgList)
+        {
+            for (int i = 1; i < _msgList.Count(); i++)
+            {
+                userData tempUser = null;
+                NodeMapping mapping = null;
+                bool userFound = false;
+
+                string s = _msgList[i];
+
+                foreach (userData us in userList)
+                {
+                    if (us.userAddr.ToString() == s)
+                    {
+                        tempUser = us;
+                        userFound = true;
+                        break;
+                    }
+                }
+
+                if (userFound)
+                {
+                    try
+                    {
+                        string prev_s = _msgList[i - 1];
+                        string next_s = _msgList[i + 1];
+
+                        if (!s.Contains('*'))
+                        {
+                            if (s.Contains(netNum + "." + subNetNum))
+                            {
+                                if (i == 1)
+                                    mapping = new NodeMapping(null, next_s, 1, 1, 1, 1);
+                                else
+                                    mapping = new NodeMapping(prev_s, next_s, 1, 1, 1, 1);
+                            }
+
+                            tempUser.userMappings.Add(mapping);
+                        }
+                        else
+                            break;
+                    }
+                    catch
+                    {
+                        //SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "Nie ma klienta o adresie: " + s);
+                        //whatToSendQueue.Enqueue(pck);
+                        SetText("Nie ma klienta o adresie: " + s);
+                    }
+
+                }
+            }
+        }*/
+
+        public void sendMappingsToNodes()
+        {
+            foreach (userData us in userList)
+            {
+                foreach (NodeMapping nodeMapping in us.userMappings)
+                {
+                    if (nodeMapping.toSend == true)
+                        try
+                        {
+                            string msg;
+
+                            if (nodeMapping.incomingAddr == null)
+                                msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                            else
+                                msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
+                                    + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+
+                            //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
+                            SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                            whatToSendQueue.Enqueue(pck);
+
+                            nodeMapping.toSend = false;
+                        }
+                        catch
+                        {
+                            //SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
+                            //whatToSendQueue.Enqueue(pck);
+                            SetText("Error while sending mappings...");
+                        }
+                }
+            }
+        }
+
         /// <summary>
         /// metoa ustalająca adres RC
         /// </summary>
@@ -544,6 +682,7 @@ namespace ConnectionControl
                 try
                 {
                     this.log.AppendText(text + "\n");
+                    this.log.ScrollToCaret();
                 }
                 catch { }
             }
