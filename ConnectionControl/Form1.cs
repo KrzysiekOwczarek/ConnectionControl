@@ -22,7 +22,7 @@ namespace ConnectionControl
 
         delegate void SetTextCallback(string text);
 
-        private static Address myAddr = new Address(0, 0, 2);
+        private Address myAddr;
 
         private class userData
         {
@@ -232,65 +232,6 @@ namespace ConnectionControl
             }
         }
 
-        private void conToCloudButton_Click(object sender, EventArgs e)
-        {
-            if (!isConnectedToCloud)
-            {
-                if (IPAddress.TryParse(cloudIPTextBox.Text, out cloudAddress))
-                {
-                    SetText("IP ustawiono jako " + cloudAddress.ToString());
-                }
-                else
-                {
-                    SetText("Błąd podczas ustawiania IP chmury (zły format?)");
-                }
-                if (Int32.TryParse(cloudPortTextBox.Text, out cloudPort))
-                {
-                    SetText("Port chmury ustawiony jako " + cloudPort.ToString());
-                }
-                else
-                {
-                    SetText("Błąd podczas ustawiania portu chmury (zły format?)");
-                }
-
-                cloudSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                cloudEndPoint = new IPEndPoint(cloudAddress, cloudPort);
-                try
-                {
-                    cloudSocket.Connect(cloudEndPoint);
-                    isConnectedToCloud = true;
-                    networkStream = new NetworkStream(cloudSocket);
-                    //writer = new StreamWriter(networkStream);
-                    //reader = new StreamReader(networkStream);
-                    List<String> _welcArr = new List<String>();
-                    _welcArr.Add("HELLO");
-                    SPacket welcomePacket = new SPacket(myAddr.ToString(), new Address(0, 0, 0).ToString(), _welcArr);
-                    whatToSendQueue.Enqueue(welcomePacket);
-                    //whatToSendQueue.Enqueue("HELLO " + myAddr);
-                    receiveThread = new Thread(this.receiver);
-                    receiveThread.IsBackground = true;
-                    receiveThread.Start();
-                    sendThread = new Thread(this.sender);
-                    sendThread.IsBackground = true;
-                    sendThread.Start();
-                    conToCloudButton.Text = "Rozłącz";
-                    SetText("Połączono!");
-                }
-                catch (SocketException)
-                {
-                    isConnectedToCloud = false;
-                    SetText("Błąd podczas łączenia się z chmurą");
-                    SetText("Złe IP lub port? Chmura nie działa?");
-                }
-            }
-            else
-            {
-                isConnectedToCloud = false;
-                conToCloudButton.Text = "Połącz";
-                SetText("Rozłączono!");
-                if (cloudSocket != null) cloudSocket.Close();
-            }
-        }
 
         public void SetText(string text)
         {
@@ -310,6 +251,93 @@ namespace ConnectionControl
                 }
                 catch { }
             }
+        }
+
+        private void conToCloudButton_Click(object sender, EventArgs e)
+        {
+            if (!isConnectedToCloud)
+            {
+                if (setAddress())
+                {
+                    if (IPAddress.TryParse(cloudIPTextBox.Text, out cloudAddress))
+                    {
+                        SetText("IP ustawiono jako " + cloudAddress.ToString());
+                    }
+                    else
+                    {
+                        SetText("Błąd podczas ustawiania IP chmury (zły format?)");
+                    }
+                    if (Int32.TryParse(cloudPortTextBox.Text, out cloudPort))
+                    {
+                        SetText("Port chmury ustawiony jako " + cloudPort.ToString());
+                    }
+                    else
+                    {
+                        SetText("Błąd podczas ustawiania portu chmury (zły format?)");
+                    }
+
+                    cloudSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    cloudEndPoint = new IPEndPoint(cloudAddress, cloudPort);
+                    try
+                    {
+                        cloudSocket.Connect(cloudEndPoint);
+                        isConnectedToCloud = true;
+                        networkStream = new NetworkStream(cloudSocket);
+                        //writer = new StreamWriter(networkStream);
+                        //reader = new StreamReader(networkStream);
+                        //sendButton.Enabled = true;
+                        List<String> _welcArr = new List<String>();
+                        _welcArr.Add("HELLO");
+                        SPacket welcomePacket = new SPacket(myAddr.ToString(), new Address(0, 0, 0).ToString(), _welcArr);
+                        whatToSendQueue.Enqueue(welcomePacket);
+                        //whatToSendQueue.Enqueue("HELLO " + myAddr);
+                        receiveThread = new Thread(this.receiver);
+                        receiveThread.IsBackground = true;
+                        receiveThread.Start();
+                        sendThread = new Thread(this.sender);
+                        sendThread.IsBackground = true;
+                        sendThread.Start();
+                        conToCloudButton.Text = "Rozłącz";
+                        SetText("Połączono!");
+                    }
+                    catch (SocketException)
+                    {
+                        isConnectedToCloud = false;
+                        SetText("Błąd podczas łączenia się z chmurą");
+                        SetText("Złe IP lub port? Chmura nie działa?");
+                    }
+                }
+                else
+                {
+                    SetText("Wprowadź numery sieci i podsieci");
+                }
+            }
+            else
+            {
+                isConnectedToCloud = false;
+                //sendButton.Enabled = false;
+                conToCloudButton.Text = "Połącz";
+                SetText("Rozłączono!");
+                if (cloudSocket != null) cloudSocket.Close();
+            }
+        }
+
+        /// <summary>
+        /// metoa ustalająca adres RC
+        /// </summary>
+        /// <returns>czy się udało czy nie</returns>
+        public bool setAddress()
+        {
+            int _netNum;
+            int _subnetNum;
+            if (int.TryParse(networkNumberTextBox.Text, out _netNum))
+                if (int.TryParse(subnetTextBox.Text, out _subnetNum))
+                {
+                    myAddr = new Address(_netNum, _subnetNum, 1);
+                    return true;
+                }
+                else return false;
+            else return false;
         }
 
     }

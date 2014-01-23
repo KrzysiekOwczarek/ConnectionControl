@@ -39,6 +39,10 @@
             this.comboBox2 = new System.Windows.Forms.ComboBox();
             this.log = new System.Windows.Forms.RichTextBox();
             this.label5 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.networkNumberTextBox = new System.Windows.Forms.TextBox();
+            this.subnetTextBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // label1
@@ -74,6 +78,7 @@
             this.cloudIPTextBox.Name = "cloudIPTextBox";
             this.cloudIPTextBox.Size = new System.Drawing.Size(128, 20);
             this.cloudIPTextBox.TabIndex = 3;
+            this.cloudIPTextBox.Text = "127.0.0.1";
             // 
             // cloudPortTextBox
             // 
@@ -81,6 +86,7 @@
             this.cloudPortTextBox.Name = "cloudPortTextBox";
             this.cloudPortTextBox.Size = new System.Drawing.Size(134, 20);
             this.cloudPortTextBox.TabIndex = 4;
+            this.cloudPortTextBox.Text = "13000";
             // 
             // conToCloudButton
             // 
@@ -90,6 +96,7 @@
             this.conToCloudButton.TabIndex = 5;
             this.conToCloudButton.Text = "POŁĄCZ";
             this.conToCloudButton.UseVisualStyleBackColor = true;
+            this.conToCloudButton.Click += new System.EventHandler(this.conToCloudButton_Click);
             // 
             // selectedClientBox
             // 
@@ -133,11 +140,47 @@
             this.label5.TabIndex = 10;
             this.label5.Text = "Log";
             // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(12, 48);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(62, 13);
+            this.label6.TabIndex = 11;
+            this.label6.Text = "Numer sieci";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(155, 48);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(80, 13);
+            this.label7.TabIndex = 12;
+            this.label7.Text = "Numer podsieci";
+            // 
+            // networkNumberTextBox
+            // 
+            this.networkNumberTextBox.Location = new System.Drawing.Point(11, 69);
+            this.networkNumberTextBox.Name = "networkNumberTextBox";
+            this.networkNumberTextBox.Size = new System.Drawing.Size(128, 20);
+            this.networkNumberTextBox.TabIndex = 13;
+            // 
+            // subnetTextBox
+            // 
+            this.subnetTextBox.Location = new System.Drawing.Point(158, 69);
+            this.subnetTextBox.Name = "subnetTextBox";
+            this.subnetTextBox.Size = new System.Drawing.Size(134, 20);
+            this.subnetTextBox.TabIndex = 14;
+            // 
             // ConnectionControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(403, 325);
+            this.Controls.Add(this.subnetTextBox);
+            this.Controls.Add(this.networkNumberTextBox);
+            this.Controls.Add(this.label7);
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.log);
             this.Controls.Add(this.comboBox2);
@@ -150,7 +193,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "ConnectionControl";
-            this.Text = "Form1";
+            this.Text = "ConnectionControl";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -169,6 +212,10 @@
         private System.Windows.Forms.ComboBox comboBox2;
         private System.Windows.Forms.RichTextBox log;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.TextBox networkNumberTextBox;
+        private System.Windows.Forms.TextBox subnetTextBox;
     }
 }
 
