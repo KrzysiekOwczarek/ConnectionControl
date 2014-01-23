@@ -23,6 +23,10 @@ namespace ConnectionControl
         delegate void SetTextCallback(string text);
 
         private Address myAddr;
+        private Address myRCAddr;
+
+        private int netNum;
+        private int subNetNum;
 
         private class userData
         {
@@ -39,6 +43,30 @@ namespace ConnectionControl
                 this.userCap = userCap;
                 this.canReq = canReq;
                 this.userType = userType;
+            }
+        }
+
+
+        //DODAC INDEXAMI MAPPINGI DO ZALOGOWANYCH WEZŁÓW?
+        private class NodeMapping
+        {
+            public string nodeAddr;
+            public string incomingAddr; //z MSG ROUTE
+            public string outcomingAddr; //z MSG ROUTE
+            public int incomingVP;
+            public int incomingVC;
+            public int outcomingVP;
+            public int outcomingVC;
+
+            public NodeMapping(string nodeAddr, string incomingAddr, string outcomingAddr, int incomingVP, int incomingVC, int outcomingVP, int outcomingVC)
+            {
+                this.nodeAddr = nodeAddr;
+                this.incomingAddr = incomingAddr;
+                this.outcomingAddr = outcomingAddr;
+                this.incomingVP = incomingVP;
+                this.incomingVC = incomingVC;
+                this.outcomingVP = outcomingVP;
+                this.outcomingVC = outcomingVC;
             }
         }
 
@@ -188,7 +216,81 @@ namespace ConnectionControl
                         }
                         else if (_msgList[0] == "REQ_CONN")
                         {
+                            try
+                            {
+                                string src = _msgList[1];
+                                string dest = _msgList[2];
 
+                                //COS Z TYM TRZEBA ZROBIC, MYSL CHUJU.
+                                string connId = _msgList[3];
+
+                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                whatToSendQueue.Enqueue(pck);
+                                
+                            }
+                            catch
+                            {
+                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
+                                whatToSendQueue.Enqueue(pck);
+                            }
+
+                        }
+                        else if(_msgList[0] == "ROUTE")
+                        {
+                            List<NodeMapping> myNodeMappings = new List<NodeMapping>();
+
+                            try
+                            {
+                                for (int i = 1; i < _msgList.Count(); i++ )
+                                {
+                                    string s = _msgList[i];
+                                    string prev_s = _msgList[i - 1];
+                                    string next_s = _msgList[i + 1];
+
+                                    if (!s.Contains('*'))
+                                    {
+                                        if (s.Contains(netNum + "." + subNetNum))
+                                        {
+                                            if (i == 1)
+                                                myNodeMappings.Add(new NodeMapping(s, null, next_s, 1, 1, 1, 1));
+                                            else
+                                                myNodeMappings.Add(new NodeMapping(s, prev_s, next_s, 1, 1, 1, 1));
+                                        }
+                                    }
+                                    else
+                                        break;
+                                }
+
+                                foreach (NodeMapping nodeMapping in myNodeMappings)
+                                {
+                                    try
+                                    {
+                                        string msg;
+
+                                        if(nodeMapping.incomingAddr == null)
+                                            msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                                        else
+                                            msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
+                                                + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+
+                                        //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
+                                        SPacket pck = new SPacket(myAddr.ToString(), nodeMapping.nodeAddr, msg );
+                                        whatToSendQueue.Enqueue(pck);
+                                    }
+                                    catch
+                                    {
+                                        SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_CONN ERROR");
+                                        whatToSendQueue.Enqueue(pck);
+                                    }
+                                }
+
+                              
+                            }
+                            catch
+                            {
+                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR");
+                                whatToSendQueue.Enqueue(pck);
+                            }
                         }
                         /*else if (_msgList[0] == "REQ_CLIENTS")
                         {
@@ -260,7 +362,8 @@ namespace ConnectionControl
         {
             if (!isConnectedToCloud)
             {
-                if (setAddress())
+                //TO CHYBA NIE NAJELPSZE MIEJSCE NA SETRCADDRESS...
+                if (setAddress() && setRCAddress())
                 {
                     if (IPAddress.TryParse(cloudIPTextBox.Text, out cloudAddress))
                     {
@@ -302,6 +405,7 @@ namespace ConnectionControl
                         sendThread.Start();
                         conToCloudButton.Text = "Rozłącz";
                         SetText("Połączono!");
+                        SetText("RC adres: " + myRCAddr.ToString());
                     }
                     catch (SocketException)
                     {
@@ -337,6 +441,22 @@ namespace ConnectionControl
                 if (int.TryParse(subnetTextBox.Text, out _subnetNum))
                 {
                     myAddr = new Address(_netNum, _subnetNum, 1);
+                    netNum = _netNum;
+                    subNetNum = _subnetNum;
+                    return true;
+                }
+                else return false;
+            else return false;
+        }
+
+        public bool setRCAddress()
+        {
+            int _netNum;
+            int _subnetNum;
+            if (int.TryParse(networkNumberTextBox.Text, out _netNum))
+                if (int.TryParse(subnetTextBox.Text, out _subnetNum))
+                {
+                    myRCAddr = new Address(_netNum, _subnetNum, 0);
                     return true;
                 }
                 else return false;
