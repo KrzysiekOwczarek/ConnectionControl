@@ -36,7 +36,7 @@
             this.conToCloudButton = new System.Windows.Forms.Button();
             this.selectedClientBox = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
+            this.selectedTransportBox = new System.Windows.Forms.ComboBox();
             this.log = new System.Windows.Forms.RichTextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
@@ -115,13 +115,13 @@
             this.label4.TabIndex = 7;
             this.label4.Text = "Węzły";
             // 
-            // comboBox2
+            // selectedTransportBox
             // 
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(158, 120);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(134, 21);
-            this.comboBox2.TabIndex = 8;
+            this.selectedTransportBox.FormattingEnabled = true;
+            this.selectedTransportBox.Location = new System.Drawing.Point(158, 120);
+            this.selectedTransportBox.Name = "selectedTransportBox";
+            this.selectedTransportBox.Size = new System.Drawing.Size(134, 21);
+            this.selectedTransportBox.TabIndex = 8;
             // 
             // log
             // 
@@ -183,7 +183,7 @@
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.log);
-            this.Controls.Add(this.comboBox2);
+            this.Controls.Add(this.selectedTransportBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.selectedClientBox);
             this.Controls.Add(this.conToCloudButton);
@@ -209,7 +209,7 @@
         private System.Windows.Forms.Button conToCloudButton;
         private System.Windows.Forms.ComboBox selectedClientBox;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.ComboBox comboBox2;
+        private System.Windows.Forms.ComboBox selectedTransportBox;
         private System.Windows.Forms.RichTextBox log;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;

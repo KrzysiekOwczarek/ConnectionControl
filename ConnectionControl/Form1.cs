@@ -121,31 +121,51 @@ namespace ConnectionControl
                             try
                             {
                                 string usr = _msgList[1];
+                                string type = _msgList[2];
                                 Address usrAddr = _senderAddr;
                                 bool tempIsOk = true;
                                 userData tempUser = null;
+
+                                //SPRAWDZA CZY TAKI JUZ JEST
                                 foreach (userData ud in userList)
                                 {
-                                    if (ud.userName == usr || ud.userAddr.ToString() == _senderAddr.ToString())
+                                    if ((ud.userName == usr || ud.userAddr.ToString() == _senderAddr.ToString()) && ud.userType.Equals(type))
                                     {
                                         tempIsOk = false;
                                         tempUser = ud;
                                     }
                                 }
+
                                 if (tempIsOk)
                                 {
-                                    userList.Add(new userData(usr, usrAddr, 6, true, "client"));
-                                    List<string> temp = new List<string>();
+                                    if (type.Equals("transport"))
+                                        userList.Add(new userData(usr, usrAddr, 6, true, "transport"));
+                                    else  if(type.Equals("client"))
+                                        userList.Add(new userData(usr, usrAddr, 6, true, "client"));
+
+                                    List<string> tempTransport = new List<string>();
+                                    List<string> tempClient = new List<string>();
                                     foreach (userData ud in userList)
                                     {
-                                        temp.Add(ud.userName);
+                                        if(ud.userType.Equals("transport"))
+                                            tempTransport.Add(ud.userName);
+                                        if (ud.userType.Equals("client"))
+                                            tempClient.Add(ud.userName);
                                     }
-                                    BindingSource bs = new BindingSource();
-                                    bs.DataSource = temp;
+
+
+                                    BindingSource bsTransport = new BindingSource();
+                                    bsTransport.DataSource = tempTransport;
+
+                                    BindingSource bsClient = new BindingSource();
+                                    bsClient.DataSource = tempClient;
+
                                     this.Invoke((MethodInvoker)delegate()
                                     {
-                                        selectedClientBox.DataSource = bs;
+                                        selectedClientBox.DataSource = bsClient;
+                                        selectedTransportBox.DataSource = bsTransport;
                                     });
+
                                     SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "OK");
                                     whatToSendQueue.Enqueue(pck);
                                     this.Invoke((MethodInvoker)delegate()
@@ -166,7 +186,11 @@ namespace ConnectionControl
                             }
                             //gdy żądanie listy klientów
                         }
-                        else if (_msgList[0] == "REQ_CLIENTS")
+                        else if (_msgList[0] == "REQ_CONN")
+                        {
+
+                        }
+                        /*else if (_msgList[0] == "REQ_CLIENTS")
                         {
                             List<string> clients = new List<string>();
                             clients.Add("CLIENTS");
@@ -222,34 +246,13 @@ namespace ConnectionControl
                                 SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ERROR");
                                 whatToSendQueue.Enqueue(pck);
                             }
-                        }
+                        }*/
                     }
                 }
                 catch
                 {
                     SetText("Coś poszło nie tak");
                 }
-            }
-        }
-
-
-        public void SetText(string text)
-        {
-            // InvokeRequired required compares the thread ID of the 
-            // calling thread to the thread ID of the creating thread. 
-            // If these threads are different, it returns true. 
-            if (this.log.InvokeRequired)
-            {
-                SetTextCallback d = new SetTextCallback(SetText);
-                this.Invoke(d, new object[] { text });
-            }
-            else
-            {
-                try
-                {
-                    this.log.AppendText(text + "\n");
-                }
-                catch { }
             }
         }
 
@@ -338,6 +341,26 @@ namespace ConnectionControl
                 }
                 else return false;
             else return false;
+        }
+
+        public void SetText(string text)
+        {
+            // InvokeRequired required compares the thread ID of the 
+            // calling thread to the thread ID of the creating thread. 
+            // If these threads are different, it returns true. 
+            if (this.log.InvokeRequired)
+            {
+                SetTextCallback d = new SetTextCallback(SetText);
+                this.Invoke(d, new object[] { text });
+            }
+            else
+            {
+                try
+                {
+                    this.log.AppendText(text + "\n");
+                }
+                catch { }
+            }
         }
 
     }
