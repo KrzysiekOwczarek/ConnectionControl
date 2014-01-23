@@ -28,7 +28,7 @@ namespace ConnectionControl
         private int netNum;
         private int subNetNum;
 
-        private class userData
+        private class UserData
         {
             public string userName;
             public Address userAddr;
@@ -37,7 +37,7 @@ namespace ConnectionControl
             public String userType;
             public List<NodeMapping> userMappings;
 
-            public userData(string userName, Address userAddr, int userCap, bool canReq, string userType)
+            public UserData(string userName, Address userAddr, int userCap, bool canReq, string userType)
             {
                 this.userName = userName;
                 this.userAddr = userAddr;
@@ -72,6 +72,37 @@ namespace ConnectionControl
             }
         }
 
+        private class ConnectionRequest
+        {
+            public string srcAddr;
+            public string destAddr;
+            public int connId;
+            public bool active;
+
+            public string currRCAddr;
+            public string nextCCAddr;
+
+            public string outNodeAddr;
+            public string inNodeAddr;
+
+            public int outVP;
+            public int outVC;
+           
+
+            public ConnectionRequest(string srcAddr, string destAddr, int connId)
+            {
+                this.srcAddr = srcAddr;
+                this.destAddr = destAddr;
+                this.connId = connId;
+                active = true;
+
+                //currRCAddr = string.Empty;
+                nextCCAddr = string.Empty;
+                outNodeAddr = string.Empty;
+                inNodeAddr = string.Empty;
+            }
+        }
+
         
 
         //dane chmury
@@ -89,7 +120,8 @@ namespace ConnectionControl
         //strumienie
         private NetworkStream networkStream;
         //lista podlączonych klientow + wezlów
-        private List<userData> userList;
+        private List<UserData> userList;
+        private ConnectionRequest currConnection;
 
         private bool isDebug;
 
@@ -97,7 +129,7 @@ namespace ConnectionControl
         
         public ConnectionControl()
         {
-            userList = new List<userData>();
+            userList = new List<UserData>();
             isConnectedToCloud = false;
             isDebug = true;
             _whatToSendQueue = new Queue();
@@ -154,10 +186,10 @@ namespace ConnectionControl
                                 string type = _msgList[2];
                                 Address usrAddr = _senderAddr;
                                 bool tempIsOk = true;
-                                userData tempUser = null;
+                                UserData tempUser = null;
 
                                 //SPRAWDZA CZY TAKI JUZ JEST
-                                foreach (userData ud in userList)
+                                foreach (UserData ud in userList)
                                 {
                                     if ((ud.userName == usr || ud.userAddr.ToString() == _senderAddr.ToString()) && ud.userType.Equals(type))
                                     {
@@ -169,13 +201,13 @@ namespace ConnectionControl
                                 if (tempIsOk)
                                 {
                                     if (type.Equals("transport"))
-                                        userList.Add(new userData(usr, usrAddr, 6, true, "transport"));
+                                        userList.Add(new UserData(usr, usrAddr, 6, true, "transport"));
                                     else  if(type.Equals("client"))
-                                        userList.Add(new userData(usr, usrAddr, 6, true, "client"));
+                                        userList.Add(new UserData(usr, usrAddr, 6, true, "client"));
 
                                     List<string> tempTransport = new List<string>();
                                     List<string> tempClient = new List<string>();
-                                    foreach (userData ud in userList)
+                                    foreach (UserData ud in userList)
                                     {
                                         if(ud.userType.Equals("transport"))
                                             tempTransport.Add(ud.userName);
@@ -229,7 +261,9 @@ namespace ConnectionControl
                                     //COS Z TYM TRZEBA ZROBIC, MYSL CHUJU.
                                     string connId = _msgList[3];
 
-                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
+
+                                    SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
 
                                 }
@@ -244,17 +278,17 @@ namespace ConnectionControl
                             {
                                 try
                                 {
-                                    string callID = _msgList[1];
+                                    string callId = _msgList[1]; //niepotrzebne info?
                                     string incomingAddr = _msgList[2];
                                     string src = _msgList[3];
                                     int vp = Convert.ToInt32(_msgList[4]);
                                     int vc = Convert.ToInt32(_msgList[5]);
                                     string dest = _msgList[6];
 
-                                    userData tempUser = null;
+                                    UserData tempUser = null;
                                     bool userFound = false;
 
-                                    foreach (userData us in userList)
+                                    foreach (UserData us in userList)
                                     {
                                         if (us.userAddr.ToString() == src)
                                         {
@@ -270,7 +304,7 @@ namespace ConnectionControl
                                         tempUser.userMappings.Add(new NodeMapping(incomingAddr, null, 1, 1, 0, 0));
                                     }
                                     
-                                    SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
 
                                 }
@@ -290,13 +324,13 @@ namespace ConnectionControl
                                 
                                 for (int i = 1; i < _msgList.Count(); i++ )
                                 {
-                                    userData tempUser = null;
+                                    UserData tempUser = null;
                                     NodeMapping mapping = null;
                                     bool userFound = false;
 
                                     string s = _msgList[i];
                                     
-                                    foreach(userData us in userList)
+                                    foreach(UserData us in userList)
                                     {
                                         if(us.userAddr.ToString() == s)
                                         {
@@ -330,7 +364,7 @@ namespace ConnectionControl
                                                         {
                                                             //SPRÓBUJ ZNALEŹC MAPPING KTORY MOZE ZOSTAL CZESCIOWO WYPELNIONY POPRZEZ REQ_CONN Z INNEGO CC JESLI TAKI JEST TO UZUPELNIJ GO OUTCOMINGAMI
                                                             //SPRAWDZ JESZCZE CZY MA TAK NIE BYC BO TO KLIENT DO KTOREGO DZWONIMY (KONCOWY NODE)
-                                                            if (tempUser.userAddr.ToString() != "1.3.3" && tempUser.userMappings.Count() != 0)
+                                                            if (tempUser.userAddr.ToString() != currConnection.destAddr && tempUser.userMappings.Count() != 0)
                                                             {
 
                                                                 foreach (NodeMapping nm in tempUser.userMappings)
@@ -368,7 +402,7 @@ namespace ConnectionControl
                                                     else
                                                         mapping = new NodeMapping(prev_s, next_s, 1, 1, 1, 1);
 
-
+                                                   
                                                     try
                                                     {
                                                         tempUser.userMappings.Add(mapping);
@@ -378,16 +412,29 @@ namespace ConnectionControl
                                                         SetText("Dodawanie jeblo");
                                                     }
 
-                                                //TU ZAMKNIJ
+                                                    //TU ZAMKNIJ
                                                 }
                                                 else
                                                     SetText("NIE MA KLIENTA O ADRESIE " + s);
+                                            }else
+                                            {
+                                                //PIERWSZY NIE Z GWIAZDKA I OSTATNI W OGOLE CZYLI NODE Z NEXT SUBNET
+                                                currConnection.outNodeAddr = prev_s;
+                                                currConnection.inNodeAddr = s;
+                                                currConnection.outVP = 1;
+                                                currConnection.outVC = 1;
                                             }
 
-                                           
+
                                         }
                                         else
+                                        {
+                                            //TU ZŁAPIE SIĘ TYLKO PIERWSZY Z GWIAZDKA I SUPER BO PRZEKSZTALCAMY GWIAZDKE NA 1 I MAMY NOWY CC DO KTOREGO WYSYLAMY REQ_CONN
+
+                                            currConnection.nextCCAddr = s.Replace('*', '1');
+
                                             break;
+                                        }
                                     }
                                     catch(Exception e)
                                     {
@@ -400,8 +447,8 @@ namespace ConnectionControl
 
                                 //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
                                 sendMappingsToNodes();
+                                sendToNextSubnet();
                                 
-
                               
                             }
                             catch
@@ -600,9 +647,19 @@ namespace ConnectionControl
             }
         }*/
 
+        public void sendToNextSubnet()
+        {
+            string msg = "REQ_CONN " + currConnection.connId + " " + currConnection.outNodeAddr + " " + currConnection.inNodeAddr 
+                + " " + currConnection.outVP + " " + currConnection.outVC + " " + currConnection.destAddr;
+
+            SPacket pck = new SPacket(myAddr.ToString(), currConnection.nextCCAddr, msg);
+            whatToSendQueue.Enqueue(pck);
+
+        }
+
         public void sendMappingsToNodes()
         {
-            foreach (userData us in userList)
+            foreach (UserData us in userList)
             {
                 foreach (NodeMapping nodeMapping in us.userMappings)
                 {
