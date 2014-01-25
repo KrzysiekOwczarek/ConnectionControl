@@ -34,7 +34,6 @@ namespace ConnectionControl
             public Address userAddr;
             public int userCap;
             public bool canReq;
-            //public String userType;
             public List<NodeMapping> userMappings;
 
             public UserData(string userName, Address userAddr, int userCap, bool canReq)
@@ -43,7 +42,6 @@ namespace ConnectionControl
                 this.userAddr = userAddr;
                 this.userCap = userCap;
                 this.canReq = canReq;
-                //this.userType = userType;
                 this.userMappings = new List<NodeMapping>();
             }
         }
@@ -103,7 +101,6 @@ namespace ConnectionControl
 
                 active = true;
                 connNodes = new List<UserData>();
-
             }
         }
 
@@ -125,6 +122,8 @@ namespace ConnectionControl
         private NetworkStream networkStream;
         //lista podlączonych klientow + wezlów
         private List<UserData> userList;
+
+        //aktualnie obslugiwane polaczenie i lista wszystkich polaczen aktywnych i nieaktywnych ktore przewinely sie przez to CC
         private ConnectionRequest currConnection;
         private List<ConnectionRequest> myConnections;
 
@@ -141,8 +140,6 @@ namespace ConnectionControl
             _whatToSendQueue = new Queue();
             whatToSendQueue = Queue.Synchronized(_whatToSendQueue);
             InitializeComponent();
-
-
         }
 
         public void sender()
@@ -267,14 +264,13 @@ namespace ConnectionControl
                             {
                                 try
                                 {
-                                    int connId = Convert.ToInt32(_msgList[1]); //niepotrzebne info?
+                                    int connId = Convert.ToInt32(_msgList[1]);
                                     string incomingAddr = _msgList[2];
                                     string src = _msgList[3];
                                     int vp = Convert.ToInt32(_msgList[4]);
                                     int vc = Convert.ToInt32(_msgList[5]);
                                     string dest = _msgList[6];
 
-                                    //good? chyba trzeba poczatkowy source albo cala sciezke trzymac bo co z rozlaczaniem?
                                     currConnection = new ConnectionRequest(src, dest, connId);
 
                                     UserData tempUser = null;
@@ -292,7 +288,7 @@ namespace ConnectionControl
 
                                     if(userFound)
                                     {
-                                        //DODANE ALE NIE WYSŁANE, WYSYŁA DOPIERO PO OTRZYMANIU ROUTE OD RC
+                                        //DODANE ALE NIE WYSŁANE, WYSYŁA DOPIERO PO OTRZYMANIU ROUTE OD RC BO TRZEBA DOKLEIC RESZTE MAPOWANIA
                                         tempUser.userMappings.Add(new NodeMapping(incomingAddr, "1", "1", "-", "-", "-", connId));
                                     }
                                     
@@ -399,9 +395,6 @@ namespace ConnectionControl
                                                     {
                                                         try
                                                         {
-                                                            //SPRÓBUJ ZNALEŹC MAPPING KTORY MOZE ZOSTAL CZESCIOWO WYPELNIONY POPRZEZ REQ_CONN Z INNEGO CC JESLI TAKI JEST TO UZUPELNIJ GO OUTCOMINGAMI
-                                                            //SPRAWDZ JESZCZE CZY MA TAK NIE BYC BO TO KLIENT DO KTOREGO DZWONIMY (KONCOWY NODE)
-                                                            //tempUser.userAddr.ToString() != currConnection.destAddr && 
                                                             if (tempUser.userMappings.Count() != 0)
                                                             {
                                                                 foreach (NodeMapping nm in tempUser.userMappings)
@@ -543,14 +536,10 @@ namespace ConnectionControl
                         cloudSocket.Connect(cloudEndPoint);
                         isConnectedToCloud = true;
                         networkStream = new NetworkStream(cloudSocket);
-                        //writer = new StreamWriter(networkStream);
-                        //reader = new StreamReader(networkStream);
-                        //sendButton.Enabled = true;
                         List<String> _welcArr = new List<String>();
                         _welcArr.Add("HELLO");
                         SPacket welcomePacket = new SPacket(myAddr.ToString(), new Address(0, 0, 0).ToString(), _welcArr);
                         whatToSendQueue.Enqueue(welcomePacket);
-                        //whatToSendQueue.Enqueue("HELLO " + myAddr);
                         receiveThread = new Thread(this.receiver);
                         receiveThread.IsBackground = true;
                         receiveThread.Start();
@@ -610,7 +599,6 @@ namespace ConnectionControl
                                 msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
                                     + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
 
-                            //DODAJ MAPPINGS DO KLIENTOW/TRANSPORTOW NA LISCIE I STAMTAD ADRESY A NIE Z DUPY 
                             SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
                             whatToSendQueue.Enqueue(pck);
 
