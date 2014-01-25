@@ -87,6 +87,9 @@ namespace ConnectionControl
             public int outVP;
             public int outVC;
 
+            public bool active;
+            public List<UserData> connNodes;
+
 
             public ConnectionRequest(string srcAddr, string destAddr, int connId)
             {
@@ -97,6 +100,9 @@ namespace ConnectionControl
                 nextCCAddr = "-";
                 outNodeAddr = "-";
                 inNodeAddr = "-";
+
+                active = true;
+                connNodes = new List<UserData>();
 
             }
         }
@@ -120,6 +126,8 @@ namespace ConnectionControl
         //lista podlączonych klientow + wezlów
         private List<UserData> userList;
         private ConnectionRequest currConnection;
+        private List<ConnectionRequest> myConnections;
+
         private bool isDebug;
 
         public bool isConnectedToCloud { get; private set; } // czy połączony z chmurą?
@@ -127,6 +135,7 @@ namespace ConnectionControl
         public ConnectionControl()
         {
             userList = new List<UserData>();
+            myConnections = new List<ConnectionRequest>();
             isConnectedToCloud = false;
             isDebug = true;
             _whatToSendQueue = new Queue();
@@ -299,6 +308,48 @@ namespace ConnectionControl
                             }
 
                         }
+                        else if(_msgList[0] == "REQ_DISCONN")
+                        {
+                            int connId = Convert.ToInt32(_msgList[1]);
+                            ConnectionRequest connToDis = null;
+
+                            foreach(ConnectionRequest cr in myConnections)
+                            {
+                                if(cr.connId == connId && cr.active == true)
+                                    connToDis = cr;
+                            }
+
+                            if (connToDis != null)
+                            {
+                                try
+                                {
+                                    foreach(UserData us in connToDis.connNodes)
+                                    {
+                                        foreach(NodeMapping nm in us.userMappings)
+                                        {
+                                            string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                            SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                            whatToSendQueue.Enqueue(pck);
+                                        }
+                                    }
+                                }
+                                catch
+                                {
+                                    SetText("JEBŁO DELOWANIE MAPPINGOW");
+                                }
+
+                                if(connToDis.nextCCAddr != "-")
+                                    try
+                                    {
+                                        SPacket pck = new SPacket(myAddr.ToString(), connToDis.nextCCAddr, "REQ_DISCONN " + connToDis.connId);
+                                        whatToSendQueue.Enqueue(pck);
+                                    }
+                                    catch
+                                    {
+                                        SetText("DEL NIE POSZEDL DO NEXTCC");
+                                    }
+                            }
+                        }
                         else if(_msgList[0] == "ROUTE")
                         {
                             
@@ -391,8 +442,11 @@ namespace ConnectionControl
                                                    
                                                     try
                                                     {
-                                                        if(mapping != null)
+                                                        if (mapping != null)
+                                                        {
                                                             tempUser.userMappings.Add(mapping);
+                                                            currConnection.connNodes.Add(tempUser);
+                                                        }
                                                     }
                                                     catch
                                                     {
@@ -435,9 +489,10 @@ namespace ConnectionControl
                                 //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
                                 sendMappingsToNodes();
 
-                                if(currConnection.inNodeAddr != "-" && currConnection.outNodeAddr != "-" && currConnection.nextCCAddr != "-")
+                                if (currConnection.inNodeAddr != "-" && currConnection.outNodeAddr != "-" && currConnection.nextCCAddr != "-")
                                     sendToNextSubnet();
-                                
+
+                                myConnections.Add(currConnection);
                               
                             }
                             catch(Exception e)
