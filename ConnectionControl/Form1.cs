@@ -241,7 +241,7 @@ namespace ConnectionControl
                         else if (_msgList[0] == "REQ_CONN")
                         {
                             //Z NCC
-                            if (_senderAddr.ToString() == "0.0.1")
+                            if (_senderAddr.ToString() == "0.0.2")
                             {
                                 try
                                 {
@@ -496,7 +496,7 @@ namespace ConnectionControl
 
                                 if(currConnection.established == true)
                                 {
-                                    SPacket pck = new SPacket(myAddr.ToString(), "0.0.1", "CONN_EST " + currConnection.connId);
+                                    SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_EST " + currConnection.connId);
                                     whatToSendQueue.Enqueue(pck);
                                 }
 
