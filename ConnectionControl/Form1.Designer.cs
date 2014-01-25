@@ -84,7 +84,7 @@
             this.cloudPortTextBox.Name = "cloudPortTextBox";
             this.cloudPortTextBox.Size = new System.Drawing.Size(134, 20);
             this.cloudPortTextBox.TabIndex = 4;
-            this.cloudPortTextBox.Text = "13000";
+            this.cloudPortTextBox.Text = "14000";
             // 
             // conToCloudButton
             // 
