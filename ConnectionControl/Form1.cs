@@ -58,7 +58,9 @@ namespace ConnectionControl
             public string outcomingVC;
             public bool toSend;
 
-            public NodeMapping(string incomingAddr, string incomingVP, string incomingVC, string outcomingAddr, string outcomingVP, string outcomingVC)
+            public int callId;
+
+            public NodeMapping(string incomingAddr, string incomingVP, string incomingVC, string outcomingAddr, string outcomingVP, string outcomingVC, int callId)
             {
                 this.incomingAddr = incomingAddr;
                 this.outcomingAddr = outcomingAddr;
@@ -66,6 +68,7 @@ namespace ConnectionControl
                 this.incomingVC = incomingVC;
                 this.outcomingVP = outcomingVP;
                 this.outcomingVC = outcomingVC;
+                this.callId = callId;
                 this.toSend = true;
             }
         }
@@ -84,7 +87,6 @@ namespace ConnectionControl
             public int outVP;
             public int outVC;
 
-            List<string> ccAddrList;
 
             public ConnectionRequest(string srcAddr, string destAddr, int connId)
             {
@@ -92,11 +94,10 @@ namespace ConnectionControl
                 this.destAddr = destAddr;
                 this.connId = connId;
 
-                nextCCAddr = string.Empty;
-                outNodeAddr = string.Empty;
-                inNodeAddr = string.Empty;
+                nextCCAddr = "-";
+                outNodeAddr = "-";
+                inNodeAddr = "-";
 
-                ccAddrList = new List<string>();
             }
         }
 
@@ -119,7 +120,6 @@ namespace ConnectionControl
         //lista podlączonych klientow + wezlów
         private List<UserData> userList;
         private ConnectionRequest currConnection;
-
         private bool isDebug;
 
         public bool isConnectedToCloud { get; private set; } // czy połączony z chmurą?
@@ -284,7 +284,7 @@ namespace ConnectionControl
                                     if(userFound)
                                     {
                                         //DODANE ALE NIE WYSŁANE, WYSYŁA DOPIERO PO OTRZYMANIU ROUTE OD RC
-                                        tempUser.userMappings.Add(new NodeMapping(incomingAddr, "1", "1", "-", "-", "-"));
+                                        tempUser.userMappings.Add(new NodeMapping(incomingAddr, "1", "1", "-", "-", "-", connId));
                                     }
                                     
                                     SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
@@ -347,11 +347,12 @@ namespace ConnectionControl
                                                         {
                                                             //SPRÓBUJ ZNALEŹC MAPPING KTORY MOZE ZOSTAL CZESCIOWO WYPELNIONY POPRZEZ REQ_CONN Z INNEGO CC JESLI TAKI JEST TO UZUPELNIJ GO OUTCOMINGAMI
                                                             //SPRAWDZ JESZCZE CZY MA TAK NIE BYC BO TO KLIENT DO KTOREGO DZWONIMY (KONCOWY NODE)
-                                                            if (tempUser.userAddr.ToString() != currConnection.destAddr && tempUser.userMappings.Count() != 0)
+                                                            //tempUser.userAddr.ToString() != currConnection.destAddr && 
+                                                            if (tempUser.userMappings.Count() != 0)
                                                             {
                                                                 foreach (NodeMapping nm in tempUser.userMappings)
                                                                 {
-                                                                    if (nm.outcomingAddr == null && nm.incomingAddr != null && nm.toSend == true)
+                                                                    if (nm.outcomingAddr == "-" && nm.incomingAddr != "-" && nm.toSend == true && nm.callId == currConnection.connId)
                                                                     {
                                                                         mapping = nm;
                                                                     }
@@ -365,14 +366,15 @@ namespace ConnectionControl
 
                                                         try
                                                         {
-                                                            if (mapping != null)
+                                                            if (mapping != null && tempUser.userAddr.ToString() != currConnection.destAddr)
                                                             {
                                                                 mapping.outcomingAddr = next_s;
                                                                 mapping.outcomingVP = "1";
                                                                 mapping.outcomingVC = "1";
                                                             }
-                                                            else
-                                                                mapping = new NodeMapping("-", "-", "-", next_s, "1", "1");
+                                                            else if (tempUser.userAddr.ToString() != currConnection.destAddr)
+                                                                mapping = new NodeMapping("-", "-", "-", next_s, "1", "1", currConnection.connId);
+                                                               
                                                         }
                                                         catch
                                                         {
@@ -381,15 +383,16 @@ namespace ConnectionControl
                                                     }
                                                     else if (tempUser.userAddr.ToString() == currConnection.destAddr)
                                                     {
-                                                        mapping = new NodeMapping(prev_s, "1", "1", "-", "-", "-");
+                                                        mapping = new NodeMapping(prev_s, "1", "1", "-", "-", "-", currConnection.connId);
                                                     }
                                                     else
-                                                        mapping = new NodeMapping(prev_s, "1", "1", next_s, "1", "1");
+                                                        mapping = new NodeMapping(prev_s, "1", "1", next_s, "1", "1", currConnection.connId);
 
                                                    
                                                     try
                                                     {
-                                                        tempUser.userMappings.Add(mapping);
+                                                        if(mapping != null)
+                                                            tempUser.userMappings.Add(mapping);
                                                     }
                                                     catch
                                                     {
@@ -431,13 +434,15 @@ namespace ConnectionControl
 
                                 //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
                                 sendMappingsToNodes();
-                                sendToNextSubnet();
+
+                                if(currConnection.inNodeAddr != "-" && currConnection.outNodeAddr != "-" && currConnection.nextCCAddr != "-")
+                                    sendToNextSubnet();
                                 
                               
                             }
-                            catch
+                            catch(Exception e)
                             {
-                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR PODLACZYŁEŚ JAKIEŚ KLIENTY DEBILU?");
+                                SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR PODLACZYŁEŚ JAKIEŚ KLIENTY DEBILU? " + e.ToString());
                                 whatToSendQueue.Enqueue(pck);
                             }
                         }
