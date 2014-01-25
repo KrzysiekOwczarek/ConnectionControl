@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AddressLibrary">
-      <HintPath>..\..\..\..\GitHub\AddressLibrary\AddressLibrary\bin\Debug\AddressLibrary.dll</HintPath>
-    </Reference>
     <Reference Include="Packet">
       <HintPath>..\..\..\..\GitHub\Packet\ClassLibrary1\bin\Debug\Packet.dll</HintPath>
     </Reference>

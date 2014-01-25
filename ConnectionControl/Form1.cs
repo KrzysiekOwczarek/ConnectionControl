@@ -183,7 +183,7 @@ namespace ConnectionControl
                     if (Address.TryParse(receivedPacket.getSrc(), out _senderAddr))
                     {
                         //gdy logowanie się
-                        if (_msgList[0] == "LOGIN")
+                        if (_msgList[0] == "HELLO")
                         {
                             try
                             {
