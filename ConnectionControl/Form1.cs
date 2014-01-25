@@ -86,6 +86,7 @@ namespace ConnectionControl
             public int outVC;
 
             public bool active;
+            public bool established;
             public List<UserData> connNodes;
 
 
@@ -100,6 +101,7 @@ namespace ConnectionControl
                 inNodeAddr = "-";
 
                 active = true;
+                established = false;
                 connNodes = new List<UserData>();
             }
         }
@@ -419,6 +421,10 @@ namespace ConnectionControl
                                                                 foundMapping.outcomingVP = "1";
                                                                 foundMapping.outcomingVC = "1";
                                                             }
+                                                            else if (foundMapping != null && tempUser.userAddr.ToString() == currConnection.destAddr)
+                                                            {
+                                                                currConnection.established = true;
+                                                            }
                                                             else if (foundMapping == null && tempUser.userAddr.ToString() == currConnection.srcAddr)//?
                                                                 newMapping = new NodeMapping(next_s, "1", "1", "-", "-", "-", currConnection.connId);
                                                                
@@ -431,6 +437,7 @@ namespace ConnectionControl
                                                     else if (tempUser.userAddr.ToString() == currConnection.destAddr)
                                                     {
                                                         newMapping = new NodeMapping(prev_s, "1", "1", "-", "-", "-", currConnection.connId);
+                                                        currConnection.established = true;
                                                     }
                                                     else
                                                         newMapping = new NodeMapping(prev_s, "1", "1", next_s, "1", "1", currConnection.connId);
@@ -487,6 +494,12 @@ namespace ConnectionControl
                                 if (currConnection.inNodeAddr != "-" && currConnection.outNodeAddr != "-" && currConnection.nextCCAddr != "-")
                                     sendToNextSubnet();
 
+                                if(currConnection.established == true)
+                                {
+                                    SPacket pck = new SPacket(myAddr.ToString(), "0.0.1", "CONN_EST " + currConnection.connId);
+                                    whatToSendQueue.Enqueue(pck);
+                                }
+
                                 myConnections.Add(currConnection);
                               
                             }
@@ -495,6 +508,10 @@ namespace ConnectionControl
                                 SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "ROUTE ERROR PODLACZYŁEŚ JAKIEŚ KLIENTY DEBILU? " + e.ToString());
                                 whatToSendQueue.Enqueue(pck);
                             }
+                        }
+                        else if (_msgList[0] == "ROUTE_NOT_FOUND")
+                        {
+
                         }
                     }
                 }
