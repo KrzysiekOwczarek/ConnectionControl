@@ -343,6 +343,8 @@ namespace ConnectionControl
                                     {
                                         SPacket pck = new SPacket(myAddr.ToString(), connToDis.nextCCAddr, "REQ_DISCONN " + connToDis.connId);
                                         whatToSendQueue.Enqueue(pck);
+
+                                        connToDis.active = false;
                                     }
                                     catch
                                     {
@@ -350,7 +352,7 @@ namespace ConnectionControl
                                     }
                             }
                         }
-                        else if(_msgList[0] == "ROUTE")
+                        else if(_msgList[0] == "ROUTE" && _senderAddr.ToString() == myRCAddr.ToString())
                         {
                             
                             try
@@ -359,7 +361,8 @@ namespace ConnectionControl
                                 for (int i = 1; i < _msgList.Count(); i++ )
                                 {
                                     UserData tempUser = null;
-                                    NodeMapping mapping = null;
+                                    NodeMapping foundMapping = null;
+                                    NodeMapping newMapping = null;
                                     bool userFound = false;
 
                                     string s = _msgList[i];
@@ -405,7 +408,7 @@ namespace ConnectionControl
                                                                 {
                                                                     if (nm.outcomingAddr == "-" && nm.incomingAddr != "-" && nm.toSend == true && nm.callId == currConnection.connId)
                                                                     {
-                                                                        mapping = nm;
+                                                                        foundMapping = nm;
                                                                     }
                                                                 }
                                                             }
@@ -417,14 +420,14 @@ namespace ConnectionControl
 
                                                         try
                                                         {
-                                                            if (mapping != null && tempUser.userAddr.ToString() != currConnection.destAddr)
+                                                            if (foundMapping != null && tempUser.userAddr.ToString() != currConnection.destAddr)
                                                             {
-                                                                mapping.outcomingAddr = next_s;
-                                                                mapping.outcomingVP = "1";
-                                                                mapping.outcomingVC = "1";
+                                                                foundMapping.outcomingAddr = next_s;
+                                                                foundMapping.outcomingVP = "1";
+                                                                foundMapping.outcomingVC = "1";
                                                             }
-                                                            else if (tempUser.userAddr.ToString() != currConnection.destAddr)
-                                                                mapping = new NodeMapping("-", "-", "-", next_s, "1", "1", currConnection.connId);
+                                                            else if (foundMapping == null && tempUser.userAddr.ToString() == currConnection.srcAddr)//?
+                                                                newMapping = new NodeMapping(next_s, "1", "1", "-", "-", "-", currConnection.connId);
                                                                
                                                         }
                                                         catch
@@ -434,18 +437,18 @@ namespace ConnectionControl
                                                     }
                                                     else if (tempUser.userAddr.ToString() == currConnection.destAddr)
                                                     {
-                                                        mapping = new NodeMapping(prev_s, "1", "1", "-", "-", "-", currConnection.connId);
+                                                        newMapping = new NodeMapping(prev_s, "1", "1", "-", "-", "-", currConnection.connId);
                                                     }
                                                     else
-                                                        mapping = new NodeMapping(prev_s, "1", "1", next_s, "1", "1", currConnection.connId);
+                                                        newMapping = new NodeMapping(prev_s, "1", "1", next_s, "1", "1", currConnection.connId);
 
                                                    
                                                     try
                                                     {
-                                                        if (mapping != null)
+                                                        if (newMapping != null)
                                                         {
-                                                            tempUser.userMappings.Add(mapping);
-                                                            currConnection.connNodes.Add(tempUser);
+                                                            tempUser.userMappings.Add(newMapping);
+                                                            
                                                         }
                                                     }
                                                     catch
@@ -453,6 +456,7 @@ namespace ConnectionControl
                                                         SetText("Dodawanie jeblo");
                                                     }
 
+                                                    currConnection.connNodes.Add(tempUser);
                                                     //TU ZAMKNIJ
                                                 }
                                                 else
@@ -482,8 +486,6 @@ namespace ConnectionControl
                                         SPacket pck = new SPacket(myAddr.ToString(), _senderAddr.ToString(), "Nie wyszło " + e.ToString());
                                         whatToSendQueue.Enqueue(pck);
                                     }
-
-                                    
                                 }
 
                                 //ROZESLIJ WSZELKIE OCZEKUJACE MAPPINGI DO NODE'ÓW
@@ -602,8 +604,8 @@ namespace ConnectionControl
                         {
                             string msg;
 
-                            if (nodeMapping.incomingAddr == null)
-                                msg = "ADD_MAPPING " + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                            if (nodeMapping.outcomingAddr == "-" && nodeMapping.outcomingVP == "-" && nodeMapping.outcomingVC == "-")
+                                msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " " + nodeMapping.callId;
                             else
                                 msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
                                     + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
