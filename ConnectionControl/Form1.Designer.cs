@@ -34,9 +34,7 @@
             this.cloudIPTextBox = new System.Windows.Forms.TextBox();
             this.cloudPortTextBox = new System.Windows.Forms.TextBox();
             this.conToCloudButton = new System.Windows.Forms.Button();
-            this.selectedClientBox = new System.Windows.Forms.ComboBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.selectedTransportBox = new System.Windows.Forms.ComboBox();
+            this.selectedUserBox = new System.Windows.Forms.ComboBox();
             this.log = new System.Windows.Forms.RichTextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
@@ -68,9 +66,9 @@
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(12, 104);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(38, 13);
+            this.label3.Size = new System.Drawing.Size(67, 13);
             this.label3.TabIndex = 2;
-            this.label3.Text = "Klienci";
+            this.label3.Text = "Użytkownicy";
             // 
             // cloudIPTextBox
             // 
@@ -98,30 +96,13 @@
             this.conToCloudButton.UseVisualStyleBackColor = true;
             this.conToCloudButton.Click += new System.EventHandler(this.conToCloudButton_Click);
             // 
-            // selectedClientBox
+            // selectedUserBox
             // 
-            this.selectedClientBox.FormattingEnabled = true;
-            this.selectedClientBox.Location = new System.Drawing.Point(15, 120);
-            this.selectedClientBox.Name = "selectedClientBox";
-            this.selectedClientBox.Size = new System.Drawing.Size(124, 21);
-            this.selectedClientBox.TabIndex = 6;
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(155, 104);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(38, 13);
-            this.label4.TabIndex = 7;
-            this.label4.Text = "Węzły";
-            // 
-            // selectedTransportBox
-            // 
-            this.selectedTransportBox.FormattingEnabled = true;
-            this.selectedTransportBox.Location = new System.Drawing.Point(158, 120);
-            this.selectedTransportBox.Name = "selectedTransportBox";
-            this.selectedTransportBox.Size = new System.Drawing.Size(134, 21);
-            this.selectedTransportBox.TabIndex = 8;
+            this.selectedUserBox.FormattingEnabled = true;
+            this.selectedUserBox.Location = new System.Drawing.Point(15, 120);
+            this.selectedUserBox.Name = "selectedUserBox";
+            this.selectedUserBox.Size = new System.Drawing.Size(124, 21);
+            this.selectedUserBox.TabIndex = 6;
             // 
             // log
             // 
@@ -184,9 +165,7 @@
             this.Controls.Add(this.label6);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.log);
-            this.Controls.Add(this.selectedTransportBox);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.selectedClientBox);
+            this.Controls.Add(this.selectedUserBox);
             this.Controls.Add(this.conToCloudButton);
             this.Controls.Add(this.cloudPortTextBox);
             this.Controls.Add(this.cloudIPTextBox);
@@ -208,9 +187,7 @@
         private System.Windows.Forms.TextBox cloudIPTextBox;
         private System.Windows.Forms.TextBox cloudPortTextBox;
         private System.Windows.Forms.Button conToCloudButton;
-        private System.Windows.Forms.ComboBox selectedClientBox;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.ComboBox selectedTransportBox;
+        private System.Windows.Forms.ComboBox selectedUserBox;
         private System.Windows.Forms.RichTextBox log;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
