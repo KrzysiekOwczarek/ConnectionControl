@@ -253,6 +253,21 @@ namespace ConnectionControl
                         }
                         else if (_msgList[0] == "REQ_CONN")
                         {
+
+                            try
+                            {
+                                foreach (UserData u in userList)
+                                {
+                                    SPacket pck = new SPacket(myAddr.ToString(), u.userAddr.ToString(), "REQ_VPATHS");
+                                    whatToSendQueue.Enqueue(pck);
+                                }
+                                
+                            }
+                            catch
+                            {
+                                SetText("Cos walnelo przy żadaniu VP");
+                            }
+
                             //Z NCC
                             if (_senderAddr.ToString() == "0.0.2")
                             {
