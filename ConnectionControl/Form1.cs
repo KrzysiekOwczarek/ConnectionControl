@@ -35,6 +35,7 @@ namespace ConnectionControl
             public int userCap;
             public bool canReq;
             public List<NodeMapping> userMappings;
+            public List<VirtualPath> vpList;
 
             public UserData(string userName, Address userAddr, int userCap, bool canReq)
             {
@@ -43,6 +44,19 @@ namespace ConnectionControl
                 this.userCap = userCap;
                 this.canReq = canReq;
                 this.userMappings = new List<NodeMapping>();
+                this.vpList = new List<VirtualPath>();
+            }
+        }
+
+        private class VirtualPath
+        {
+            public int vpi;
+            public List<int> vci;
+
+            public VirtualPath(int vpi)
+            {
+                this.vpi = vpi;
+                this.vci = new List<int>();
             }
         }
 
@@ -107,7 +121,6 @@ namespace ConnectionControl
         }
 
         
-
         //dane chmury
         private IPAddress cloudAddress;        //Adres na którym chmura nasłuchuje
         private Int32 cloudPort;           //port chmury
@@ -527,6 +540,10 @@ namespace ConnectionControl
                         {
 
                         }
+                        else if(_msgList[0] == "RES_VPATHS")
+                        {
+                            receiveVirtualPaths(_msgList);
+                        }
                     }
                 }
                 catch
@@ -600,6 +617,35 @@ namespace ConnectionControl
                 conToCloudButton.Text = "Połącz";
                 SetText("Rozłączono!");
                 if (cloudSocket != null) cloudSocket.Close();
+            }
+        }
+
+        public void receiveVirtualPaths(List<string> msg)
+        {
+            try
+            {
+                List<string> _sub_msg = null;
+
+                for(int i = 1; i < msg.Count(); i++)
+                {
+                    _sub_msg = msg[i].Split('#').ToList();
+                    var user = from u in userList where u.userAddr.ToString() == _sub_msg[0] select u; 
+                    
+                  
+                    foreach(var u in user)
+                    {
+                        for(int j = 1; j < _sub_msg.Count(); j++)
+                        {
+                            u.vpList.Add(new VirtualPath(Convert.ToInt32(_sub_msg[j])));
+                            SetText("Dodano VP o nr " + _sub_msg[j] + " do usera o adresie " + u.userAddr.ToString());
+                        }
+                    }
+                    
+                }
+            }
+            catch
+            {
+                
             }
         }
 
