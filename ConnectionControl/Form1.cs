@@ -348,6 +348,20 @@ namespace ConnectionControl
                                     {
                                         SetText("DEL NIE POSZEDL DO NEXTCC");
                                     }
+                                else
+                                {
+                                    try
+                                    {
+                                        SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_DISSCON " + connToDis.connId);
+                                        whatToSendQueue.Enqueue(pck);
+
+                                        connToDis.active = false;
+                                    }
+                                    catch
+                                    {
+                                        SetText("NCC NIE OTRZYMAŁ POTWIERDZENIA DISCONN");
+                                    }
+                                }
                             }
                         }
                         else if(_msgList[0] == "ROUTE" && _senderAddr.ToString() == myRCAddr.ToString())
