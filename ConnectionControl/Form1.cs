@@ -355,15 +355,23 @@ namespace ConnectionControl
                                     {
                                         foreach(NodeMapping nm in us.userMappings)
                                         {
-                                            string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
-                                            SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
-                                            whatToSendQueue.Enqueue(pck);
+                                            try
+                                            {
+                                                string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                                whatToSendQueue.Enqueue(pck);
+
+
+                                                deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
+                                            }catch{
+                                                SetText("Error sending DEL mapping");
+                                            }
                                         }
                                     }
                                 }
                                 catch
                                 {
-                                    SetText("JEBŁO DELOWANIE MAPPINGOW");
+                                    SetText("Error whilst disconnecting connection");
                                 }
 
                                 if(connToDis.nextCCAddr != "-")
@@ -823,7 +831,7 @@ namespace ConnectionControl
                     {
                         string destAddr = _sub_msg[0];
                         for(int j = 1; j < _sub_msg.Count(); j++)
-                        {//FFF
+                        {
                             try
                             {
                                 var vpi = from v in u.possibleOutVPs where (v.destAddr.Equals(destAddr) && v.vpi.Equals(_sub_msg[j])) select v;
