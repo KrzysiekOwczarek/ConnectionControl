@@ -299,8 +299,8 @@ namespace ConnectionControl
                                     int connId = Convert.ToInt32(_msgList[1]);
                                     string incomingAddr = _msgList[2];
                                     string src = _msgList[3];
-                                    int vp = Convert.ToInt32(_msgList[4]);
-                                    int vc = Convert.ToInt32(_msgList[5]);
+                                    string vp = _msgList[4];
+                                    string vc = _msgList[5];
                                     string dest = _msgList[6];
 
                                     currConnection = new ConnectionRequest(src, dest, connId);
@@ -321,7 +321,7 @@ namespace ConnectionControl
                                     if(userFound)
                                     {
                                         //DODANE ALE NIE WYSŁANE, WYSYŁA DOPIERO PO OTRZYMANIU ROUTE OD RC BO TRZEBA DOKLEIC RESZTE MAPOWANIA
-                                        tempUser.userMappings.Add(new NodeMapping(incomingAddr, "1", "1", "-", "-", "-", connId));
+                                        tempUser.userMappings.Add(new NodeMapping(incomingAddr, vp, vc, "-", "-", "-", connId));
                                     }
                                     
                                     SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
@@ -536,8 +536,8 @@ namespace ConnectionControl
                                                             }
                                                             else if (foundMapping != null && tempUser.userAddr.ToString() != currConnection.destAddr) //PIERWSZY NODE W NOWEJ PODSIECI
                                                             {
-                                                                //int newVPI = nextVirtualPath(null, tempUser);ZMIEN TO KURWO
-                                                                string newVPI = "1";
+                                                                string newVPI = nextVirtualPath(null, tempUser, next_s);
+                                                                //string newVPI = "1";
                                                                 foundMapping.outcomingAddr = next_s;
                                                                 foundMapping.outcomingVP = newVPI;
                                                                 foundMapping.outcomingVC = "1";
@@ -565,9 +565,9 @@ namespace ConnectionControl
                                                                     newMapping = new NodeMapping(prev_s, prevMapping.outcomingVP, "1", "-", "-", "-", currConnection.connId);
                                                                     currConnection.established = true;
                                                                 }
-                                                                catch
+                                                                catch(Exception e)
                                                                 {
-                                                                    SetText("Error from not first in ROUTE but last in connection, node " + s);
+                                                                    SetText("Error from not first in ROUTE but last in connection, node " + s + ", error: " + e.ToString());
                                                                 }
                                                             }
                                                             else //NODIX GDZIEŚ POMIĘDZY, MA WEJŚCIE I WYJŚCIE
@@ -606,6 +606,10 @@ namespace ConnectionControl
                                                             tempUser.userMappings.Add(newMapping);
                                                             prevTempUser = tempUser;
                                                         }
+                                                        else if (foundMapping != null)
+                                                        {
+                                                            prevTempUser = tempUser;
+                                                        }
                                                     }
                                                     catch
                                                     {
@@ -623,10 +627,11 @@ namespace ConnectionControl
                                                 //PIERWSZY NIE Z GWIAZDKA I OSTATNI W OGOLE CZYLI NODE Z NEXT SUBNET
                                                 currConnection.outNodeAddr = prev_s;
                                                 currConnection.inNodeAddr = s;
-
+                                                NodeMapping prevMapping = prevTempUser.userMappings[prevTempUser.userMappings.Count() - 1];
+                                                //string newVPI = nextVirtualPath(prevMapping, tempUser, next_s);
                                                 //TU_VP
-                                                currConnection.outVP = 1;
-                                                currConnection.outVC = 1;
+                                                currConnection.outVP = Convert.ToInt32(prevMapping.outcomingVP);
+                                                currConnection.outVC = Convert.ToInt32(prevMapping.outcomingVC);
                                             }
 
 
@@ -760,7 +765,14 @@ namespace ConnectionControl
             //NodeMapping lastMapping = prevUser.userMappings[prevUser.userMappings.Count() - 1];
             if (prevMapping != null)
             {
-                var vpi = from v in currUser.possibleOutVPs where (v.destAddr.Equals(destAddr) && v.vpi.Equals(prevMapping.outcomingVP)) select v; //ZJEBANE?
+                string outvpi = null;
+
+                if (prevMapping.outcomingVP == "-")
+                    outvpi = prevMapping.incomingVP;
+                else
+                    outvpi = prevMapping.outcomingVP;
+
+                var vpi = from v in currUser.possibleOutVPs where (v.destAddr.Equals(destAddr) && v.vpi.Equals(outvpi)) select v; //ZJEBANE?
                 /*bool found = false;
 
                 foreach(VirtualPath v in currUser.possibleOutVPs)
@@ -773,15 +785,21 @@ namespace ConnectionControl
                 }*/
 
                 //if (found)
-                if(vpi.Any())
-                    nextVPI = prevMapping.outcomingVP;
+                if (vpi.Any())
+                    nextVPI = outvpi;
                 else
                 {
-                    nextVPI = (currUser.possibleOutVPs[random.Next(0, currUser.possibleOutVPs.Count()-1)]).vpi;
+                    var possiblevpi = from v in currUser.possibleOutVPs where v.destAddr.Equals(destAddr) select v;
+                    List<VirtualPath> possiblePaths = possiblevpi.ToList();
+                    nextVPI = (possiblePaths[random.Next(0, possiblePaths.Count() - 1)]).vpi;
                 }
             }
             else
-                nextVPI = (currUser.possibleOutVPs[random.Next(0, currUser.possibleOutVPs.Count()-1)]).vpi;
+            {
+                var possiblevpi = from v in currUser.possibleOutVPs where v.destAddr.Equals(destAddr) select v;
+                List<VirtualPath> possiblePaths = possiblevpi.ToList();
+                nextVPI = (possiblePaths[random.Next(0, possiblePaths.Count() - 1)]).vpi;
+            }
 
             return nextVPI;
         }
