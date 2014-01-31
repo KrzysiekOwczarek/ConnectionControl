@@ -709,11 +709,11 @@ namespace ConnectionControl
 
                                         if(cr.outNodeAddr == "-")
                                         {
-                                            secParam = cr.inNodeAddr;
+                                            secParam = cr.srcAddr;
                                         }
                                         else
                                         {
-                                            secParam = cr.outNodeAddr;
+                                            secParam = cr.inNodeAddr;
                                         }
 
                                         SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
@@ -757,7 +757,7 @@ namespace ConnectionControl
                                                     pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_NOEST " + cr.connId);
                                                     whatToSendQueue.Enqueue(pck);
                                                 }*/
-                                                SetText("");
+                                                //SetText("");
                                             }
                                         }
                                     }
@@ -776,7 +776,7 @@ namespace ConnectionControl
                             
 
 
-                            SetText("");
+                            //SetText("");
 
                             //DISCONNECT SASIEDNIE WEZLY ZMAPOWANE
 
@@ -784,7 +784,7 @@ namespace ConnectionControl
                             //SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "REQ_CONN );
                             //whatToSendQueue.Enqueue(pck);
                         }
-                        else if (_msgList[0] == "REQ_SRC")
+                        /*else if (_msgList[0] == "REQ_SRC")
                         {
                             int id = Convert.ToInt32(_msgList[1]);
 
@@ -797,7 +797,7 @@ namespace ConnectionControl
                                     whatToSendQueue.Enqueue(pck);
                                 }
                             }
-                        }
+                        }*/
                     }
                 }
                 catch
@@ -1010,13 +1010,33 @@ namespace ConnectionControl
                     if (nodeMapping.toSend == true)
                         try
                         {
-                            string msg;
+                            string msg = null;
+
+                            
 
                             if (nodeMapping.outcomingAddr == "-" && nodeMapping.outcomingVP == "-" && nodeMapping.outcomingVC == "-")
-                                msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " " + nodeMapping.callId;
+                            {
+                                /*var mapping = from m in us.userMappings
+                                              where (m.incomingAddr.Equals(nodeMapping.incomingAddr) &&
+                                                  m.incomingVP.Equals(nodeMapping.incomingVP) && m.incomingVC.Equals(nodeMapping.incomingVC) &&
+                                                  m.outcomingAddr.Equals("-") && m.incomingVP.Equals("-") && m.incomingVC.Equals("-"))
+                                              select m;
+                                if(!mapping.Any())*/
+                                    msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " " + nodeMapping.callId;
+                            }
                             else
-                                msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
-                                    + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                            {
+                                /*var mapping = from m in us.userMappings
+                                              where (m.incomingAddr.Equals(nodeMapping.incomingAddr) &&
+                                                  m.incomingVP.Equals(nodeMapping.incomingVP) && m.incomingVC.Equals(nodeMapping.incomingVC) &&
+                                                  m.outcomingAddr.Equals(nodeMapping.outcomingAddr) && m.outcomingVP.Equals(nodeMapping.outcomingVP) 
+                                                  && m.outcomingVC.Equals(nodeMapping.outcomingVC))
+                                              select m;
+
+                                if(!mapping.Any())*/
+                                    msg = "ADD_MAPPING " + nodeMapping.incomingAddr + " " + nodeMapping.incomingVP + " " + nodeMapping.incomingVC + " "
+                                        + nodeMapping.outcomingAddr + " " + nodeMapping.outcomingVP + " " + nodeMapping.outcomingVC;
+                            }
 
                             SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
                             whatToSendQueue.Enqueue(pck);
