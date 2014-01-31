@@ -360,7 +360,17 @@ namespace ConnectionControl
                                         {
                                             try
                                             {
-                                                string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                string msg;
+
+                                                if (nm.outcomingAddr == "-" && nm.outcomingVP == "-" && nm.outcomingVC == "-")
+                                                {
+                                                    msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC;
+                                                }
+                                                else
+                                                {
+                                                    msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                }
+                                                
                                                 SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
                                                 whatToSendQueue.Enqueue(pck);
 
