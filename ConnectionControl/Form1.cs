@@ -93,6 +93,7 @@ namespace ConnectionControl
             public string destAddr;
             public int connId;
 
+            public string prevCCAddr;
             public string nextCCAddr;
 
             public string outNodeAddr;
@@ -112,6 +113,7 @@ namespace ConnectionControl
                 this.destAddr = destAddr;
                 this.connId = connId;
 
+                prevCCAddr = "-";
                 nextCCAddr = "-";
                 outNodeAddr = "-";
                 inNodeAddr = "-";
@@ -280,6 +282,7 @@ namespace ConnectionControl
                                     string connId = _msgList[3];
 
                                     currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
+                                    currConnection.prevCCAddr = src;
 
                                     SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
