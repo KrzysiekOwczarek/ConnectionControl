@@ -403,7 +403,7 @@ namespace ConnectionControl
                                 {
                                     try
                                     {
-                                        SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_DISSCON " + connToDis.connId);
+                                        SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_DISCONN " + connToDis.connId);
                                         whatToSendQueue.Enqueue(pck);
 
                                         connToDis.active = false;
@@ -726,7 +726,9 @@ namespace ConnectionControl
                                             secParam = cr.inNodeAddr;
                                         }
 
-                                        SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
+                                        //SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
+                                        SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_CONNECT " + cr.connId + " " + cr.outNodeAddr + " " +
+                                            cr.outVP + " " + cr.outVC + " " + cr.destAddr);
                                         whatToSendQueue.Enqueue(pck);
 
                                         receivedPacket = (Packet.SPacket)bf.Deserialize(networkStream);
