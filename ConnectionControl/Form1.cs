@@ -702,13 +702,26 @@ namespace ConnectionControl
                                             }
                                         }
                                     }
+
+                                    try
+                                    {
+                                        SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + cr.outNodeAddr);
+                                        whatToSendQueue.Enqueue(pck);
+                                    }
+                                    catch
+                                    {
+                                        SetText("Error whilst sending request to RC for restoring in-domain route");
+                                    }
                                 }
                             }
                             catch
                             {
                                 SetText("Error whilst disconnecting connection");
                             }
+
+
                             
+
 
                             SetText("");
 
