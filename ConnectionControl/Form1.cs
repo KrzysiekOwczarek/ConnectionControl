@@ -678,6 +678,38 @@ namespace ConnectionControl
                                 }
                             }
 
+
+                            try
+                            {
+                                foreach (ConnectionRequest cr in toRestoreConns)
+                                {
+                                    foreach (UserData us in cr.connNodes)
+                                    {
+                                        foreach (NodeMapping nm in us.userMappings)
+                                        {
+                                            try
+                                            {
+                                                string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                                whatToSendQueue.Enqueue(pck);
+
+
+                                                deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
+                                            }
+                                            catch
+                                            {
+                                                SetText("Error sending DEL mapping in DEAD section");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                SetText("Error whilst disconnecting connection");
+                            }
+                            
+
                             SetText("");
 
                             //DISCONNECT SASIEDNIE WEZLY ZMAPOWANE
