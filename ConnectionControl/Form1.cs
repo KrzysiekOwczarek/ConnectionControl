@@ -282,7 +282,7 @@ namespace ConnectionControl
                                     string connId = _msgList[3];
 
                                     currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
-                                    currConnection.prevCCAddr = src;
+                                    currConnection.prevCCAddr = "0.0.2";
 
                                     SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
@@ -726,52 +726,17 @@ namespace ConnectionControl
                                             secParam = cr.inNodeAddr;
                                         }
 
-                                        //SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
-                                        SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_CONNECT " + cr.connId + " " + cr.outNodeAddr + " " +
-                                            cr.outVP + " " + cr.outVC + " " + cr.destAddr);
+                                        SPacket pck;
+                                        if (cr.prevCCAddr == "0.0.2") {
+                                           // SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
+                                            pck = new SPacket(cr.prevCCAddr, myAddr.ToString(), "REQ_CONN " + cr.srcAddr + " " + cr.destAddr + " " + cr.connId);
+                                        }else{
+                                            pck = new SPacket(myAddr.ToString(), cr.prevCCAddr, "REQ_CONN " + cr.connId + " " + cr.outNodeAddr + " " +
+                                                cr.outVP + " " + cr.outVC + " " + cr.destAddr);
+                                        }
                                         whatToSendQueue.Enqueue(pck);
 
-                                        receivedPacket = (Packet.SPacket)bf.Deserialize(networkStream);
-                                        //if (isDebug) SetText("Odczytano:\n" + receivedPacket.ToString());
-                                        List<String> _sub_msgList = receivedPacket.getParames();
-                                        Address _sub_senderAddr;
-                                        if (Address.TryParse(receivedPacket.getSrc(), out _sub_senderAddr))
-                                        {
-                                            if(_sub_msgList[0] == "ROUTE_NOT_FOUND")
-                                            {
-                                                /*if (cr.prevCCAddr != "-")
-                                                {
-                                                    try
-                                                    {
-
-                                                        pck = new SPacket(myAddr.ToString(), cr.prevCCAddr, "REQ_SRC " + cr.connId);
-                                                        whatToSendQueue.Enqueue(pck);
-
-                                                        receivedPacket = (Packet.SPacket)bf.Deserialize(networkStream);
-                                                        //if (isDebug) SetText("Odczytano:\n" + receivedPacket.ToString());
-                                                        List<String> _sub_sub_msgList = receivedPacket.getParames();
-                                                        Address _sub_sub_senderAddr;
-                                                        if (Address.TryParse(receivedPacket.getSrc(), out _sub_sub_senderAddr))
-                                                        {
-                                                            if (_sub_sub_msgList[0] == "MY_SRC")
-                                                            {
-                                                                string prevCCsource = _sub_sub_msgList[1];
-                                                            }
-                                                        }
-                                                    }
-                                                    catch
-                                                    {
-                                                        SetText("Error whilst cross-domain restoration asking RC for cross-domain ROUTE");
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_NOEST " + cr.connId);
-                                                    whatToSendQueue.Enqueue(pck);
-                                                }*/
-                                                //SetText("");
-                                            }
-                                        }
+                                        
                                     }
                                     catch
                                     {
