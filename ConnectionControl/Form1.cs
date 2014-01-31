@@ -89,15 +89,15 @@ namespace ConnectionControl
 
         private class ConnectionRequest
         {
-            public string srcAddr;
-            public string destAddr;
+            public string srcAddr; // 1 W PODSIECI
+            public string destAddr; // GLOBAL DEST
             public int connId;
 
             public string prevCCAddr;
             public string nextCCAddr;
 
-            public string outNodeAddr;
-            public string inNodeAddr;
+            public string outNodeAddr; //TRANZYT W OBECNEJ
+            public string inNodeAddr; //TRANZYT W NASTEPNEJ
 
             public int outVP;
             public int outVC;
@@ -658,6 +658,27 @@ namespace ConnectionControl
                         else if(_msgList[0] == "DEAD")
                         {
                             string deadAddr = _msgList[1];
+
+                            List<ConnectionRequest> toRestoreConns = new List<ConnectionRequest>();
+
+                            foreach(ConnectionRequest cr in myConnections)
+                            {
+                                foreach(UserData ud in cr.connNodes)
+                                {
+                                    foreach (NodeMapping nm in ud.userMappings)
+                                    {
+                                        if (nm.incomingAddr.Equals(deadAddr) || nm.outcomingAddr.Equals(deadAddr))
+                                        {
+                                            var conn = from c in toRestoreConns where c.connId == cr.connId select c;
+
+                                            if(!conn.Any())
+                                                toRestoreConns.Add(cr);
+                                        }
+                                    }
+                                }
+                            }
+
+                            SetText("");
 
                             //DISCONNECT SASIEDNIE WEZLY ZMAPOWANE
 
