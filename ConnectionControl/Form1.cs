@@ -846,7 +846,7 @@ namespace ConnectionControl
                                 SetText("Error whilst checking if vpi is on...");
                             }
 
-                            SetText("Dodano VP o nr " + _sub_msg[j] + " na połączenie z adresem " + destAddr + " do usera o adresie " + u.userAddr.ToString());
+                            //SetText("Dodano VP o nr " + _sub_msg[j] + " na połączenie z adresem " + destAddr + " do usera o adresie " + u.userAddr.ToString());
                         }
                     }
                     
