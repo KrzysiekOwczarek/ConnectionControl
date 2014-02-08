@@ -103,6 +103,10 @@ namespace ConnectionControl
             public int outVP;
             public int outVC;
 
+            public int inVP;
+            public int inVC;
+            public string incomingAddr;
+
             public bool active;
             public bool established;
             public List<UserData> connNodes;
@@ -396,6 +400,10 @@ namespace ConnectionControl
                                     }
 
                                     currConnection = new ConnectionRequest(src, dest, connId);
+                                    currConnection.incomingAddr = incomingAddr;
+                                    currConnection.inVP = Convert.ToInt32(vp);
+                                    currConnection.inVC = Convert.ToInt32(vc);
+                                    currConnection.prevCCAddr = _senderAddr.ToString();
 
                                     UserData tempUser = null;
                                     bool userFound = false;
@@ -565,7 +573,7 @@ namespace ConnectionControl
                                                         }
                                                         catch
                                                         {
-                                                            SetText("Something wrong with CC mapping format [error while finding non-complete mapping but mapping are there...]");
+                                                            SetText("Something wrong with CC mapping format [error while finding non-complete mapping but mapping is there...]");
                                                         }
 
                                                         try
@@ -845,18 +853,26 @@ namespace ConnectionControl
                             }
                             */
 
-                            /*try
+                            try
                             {
                                 foreach (ConnectionRequest cr in toRestoreConns)
                                 {
                                     try
                                     {
-                                        string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
-                                        SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                        string msg = null;
+
+                                        if(cr.prevCCAddr == "1.0.2")
+                                        {
+                                            msg = "REQ_CONN " + cr.srcAddr + " " + cr.destAddr + " " + cr.connId;
+                                        }
+                                        else
+                                        {
+                                            msg = "REQ_CONN " + cr.connId + " " + cr.incomingAddr + " " + cr.srcAddr + " " + cr.inVP + " " + cr.inVC + " " + cr.destAddr;
+                                        }
+                                        
+                                        SPacket pck = new SPacket(cr.prevCCAddr, myAddr.ToString(), msg);
                                         whatToSendQueue.Enqueue(pck);
 
-
-                                        deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
                                     }
                                     catch
                                     {
@@ -867,7 +883,7 @@ namespace ConnectionControl
                             catch
                             {
                                 SetText("Error whilst connection restoration");
-                            }*/
+                            }
 
                             
 
