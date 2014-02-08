@@ -24,6 +24,7 @@ namespace ConnectionControl
 
         private Address myAddr;
         private Address myRCAddr;
+        private Address NCCAddr = new Address(1, 0, 2);
 
         private int netNum;
         private int subNetNum;
@@ -273,7 +274,7 @@ namespace ConnectionControl
                             }
 
                             //Z NCC
-                            if (_senderAddr.ToString() == "0.0.2")
+                            if (_senderAddr.ToString() == NCCAddr.ToString())
                             {
                                 try
                                 {
@@ -281,10 +282,54 @@ namespace ConnectionControl
                                     string dest = _msgList[2];
                                     string connId = _msgList[3];
 
-                                    currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
-                                    currConnection.prevCCAddr = "0.0.2";
+                                    SPacket pck;
 
-                                    SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    var conn = from c in myConnections where c.connId == Convert.ToInt32(connId) select c;
+                                    if(conn.Any())
+                                    {
+                                        foreach(var c in conn)
+                                            try
+                                            {
+                                                foreach (UserData us in c.connNodes)
+                                                {
+                                                    foreach (NodeMapping nm in us.userMappings)
+                                                    {
+                                                        try
+                                                        {
+                                                            string msg;
+
+                                                            if (nm.outcomingAddr == "-" && nm.outcomingVP == "-" && nm.outcomingVC == "-")
+                                                            {
+                                                                msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC;
+                                                            }
+                                                            else
+                                                            {
+                                                                msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                            }
+
+                                                            pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                                            whatToSendQueue.Enqueue(pck);
+
+
+                                                            deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
+                                                        }
+                                                        catch
+                                                        {
+                                                            SetText("Error sending DEL mapping");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            catch
+                                            {
+                                                SetText("Error whilst disconnecting existing connection, resto case");
+                                            }
+                                    }
+
+                                    currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
+                                    currConnection.prevCCAddr = NCCAddr.ToString();
+
+                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
 
                                 }
@@ -305,6 +350,50 @@ namespace ConnectionControl
                                     string vp = _msgList[4];
                                     string vc = _msgList[5];
                                     string dest = _msgList[6];
+
+                                    SPacket pck;
+
+                                    var conn = from c in myConnections where c.connId == Convert.ToInt32(connId) select c;
+                                    if (conn.Any())
+                                    {
+                                        foreach (var c in conn)
+                                            try
+                                            {
+                                                foreach (UserData us in c.connNodes)
+                                                {
+                                                    foreach (NodeMapping nm in us.userMappings)
+                                                    {
+                                                        try
+                                                        {
+                                                            string msg;
+
+                                                            if (nm.outcomingAddr == "-" && nm.outcomingVP == "-" && nm.outcomingVC == "-")
+                                                            {
+                                                                msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC;
+                                                            }
+                                                            else
+                                                            {
+                                                                msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                                            }
+
+                                                            pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                                            whatToSendQueue.Enqueue(pck);
+
+
+                                                            deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
+                                                        }
+                                                        catch
+                                                        {
+                                                            SetText("Error sending DEL mapping");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            catch
+                                            {
+                                                SetText("Error whilst disconnecting existing connection, resto case");
+                                            }
+                                    }
 
                                     currConnection = new ConnectionRequest(src, dest, connId);
 
@@ -327,7 +416,7 @@ namespace ConnectionControl
                                         tempUser.userMappings.Add(new NodeMapping(incomingAddr, vp, vc, "-", "-", "-", connId));
                                     }
                                     
-                                    SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
 
                                 }
@@ -403,7 +492,7 @@ namespace ConnectionControl
                                 {
                                     try
                                     {
-                                        SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_DISCONN " + connToDis.connId);
+                                        SPacket pck = new SPacket(myAddr.ToString(), NCCAddr.ToString(), "CONN_DISCONN " + connToDis.connId);
                                         whatToSendQueue.Enqueue(pck);
 
                                         connToDis.active = false;
@@ -642,7 +731,7 @@ namespace ConnectionControl
 
                                 if(currConnection.established == true)
                                 {
-                                    SPacket pck = new SPacket(myAddr.ToString(), "0.0.2", "CONN_EST " + currConnection.connId);
+                                    SPacket pck = new SPacket(myAddr.ToString(), NCCAddr.ToString(), "CONN_EST " + currConnection.connId);
                                     whatToSendQueue.Enqueue(pck);
                                 }
 
@@ -694,7 +783,7 @@ namespace ConnectionControl
                             }
 
 
-                            try
+                            /*try
                             {
                                 foreach (ConnectionRequest cr in toRestoreConns)
                                 {
@@ -732,7 +821,8 @@ namespace ConnectionControl
                                         }
 
                                         SPacket pck;
-                                        if (cr.prevCCAddr == "0.0.2") {
+                                        if (cr.prevCCAddr == NCCAddr.ToString())
+                                        {
                                            // SPacket pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + cr.srcAddr + " " + secParam);
                                             pck = new SPacket(cr.prevCCAddr, myAddr.ToString(), "REQ_CONN " + cr.srcAddr + " " + cr.destAddr + " " + cr.connId);
                                         }else{
@@ -753,7 +843,31 @@ namespace ConnectionControl
                             {
                                 SetText("Error whilst disconnecting connection");
                             }
+                            */
 
+                            /*try
+                            {
+                                foreach (ConnectionRequest cr in toRestoreConns)
+                                {
+                                    try
+                                    {
+                                        string msg = "DEL_MAPPING " + nm.incomingAddr + " " + nm.incomingVP + " " + nm.incomingVC + " " + nm.outcomingAddr + " " + nm.outcomingVP + " " + nm.outcomingVC;
+                                        SPacket pck = new SPacket(myAddr.ToString(), us.userAddr.ToString(), msg);
+                                        whatToSendQueue.Enqueue(pck);
+
+
+                                        deleteVirtualConnection(us, nm.outcomingVP, nm.outcomingVC, nm.outcomingAddr);
+                                    }
+                                    catch
+                                    {
+                                        SetText("Error sending DEL mapping in DEAD section");
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                SetText("Error whilst connection restoration");
+                            }*/
 
                             
 
