@@ -424,7 +424,7 @@ namespace ConnectionControl
                                         tempUser.userMappings.Add(new NodeMapping(incomingAddr, vp, vc, "-", "-", "-", connId));
                                     }
                                     
-                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest + " " + _senderAddr.network+"."+_senderAddr.subnet+".*");
                                     whatToSendQueue.Enqueue(pck);
 
                                 }

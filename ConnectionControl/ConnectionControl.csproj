@@ -34,10 +34,10 @@
   <ItemGroup>
     <Reference Include="AddressLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\GitHub\AddressLibrary\AddressLibrary\bin\Debug\AddressLibrary.dll</HintPath>
+      <HintPath>..\..\AddressLibrary\AddressLibrary\bin\Debug\AddressLibrary.dll</HintPath>
     </Reference>
     <Reference Include="Packet">
-      <HintPath>..\..\..\..\GitHub\Packet\ClassLibrary1\bin\Debug\Packet.dll</HintPath>
+      <HintPath>..\..\Packet\ClassLibrary1\bin\Debug\Packet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
