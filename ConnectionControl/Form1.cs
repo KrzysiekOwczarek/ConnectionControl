@@ -149,6 +149,8 @@ namespace ConnectionControl
 
         //aktualnie obslugiwane polaczenie i lista wszystkich polaczen aktywnych i nieaktywnych ktore przewinely sie przez to CC
         private ConnectionRequest currConnection;
+
+        private List<ConnectionRequest> awaitingConnections;
         private List<ConnectionRequest> myConnections;
 
         private bool isDebug;
@@ -159,6 +161,7 @@ namespace ConnectionControl
         {
             userList = new List<UserData>();
             myConnections = new List<ConnectionRequest>();
+            awaitingConnections = new List<ConnectionRequest>();
             isConnectedToCloud = false;
             isDebug = true;
             _whatToSendQueue = new Queue();
@@ -333,8 +336,16 @@ namespace ConnectionControl
                                     currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
                                     currConnection.prevCCAddr = NCCAddr.ToString();
 
-                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
-                                    whatToSendQueue.Enqueue(pck);
+                                    awaitingConnections.Add(currConnection);
+
+                                    
+                                    while (awaitingConnections.Count() != 0)
+                                    {
+                                        ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
+                                        pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + temp.srcAddr + " " + temp.destAddr);
+                                        whatToSendQueue.Enqueue(pck);
+                                        awaitingConnections.RemoveAt(awaitingConnections.Count() - 1);
+                                    }
 
                                 }
                                 catch
