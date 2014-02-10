@@ -149,6 +149,8 @@ namespace ConnectionControl
 
         //aktualnie obslugiwane polaczenie i lista wszystkich polaczen aktywnych i nieaktywnych ktore przewinely sie przez to CC
         private ConnectionRequest currConnection;
+
+        private List<ConnectionRequest> awaitingConnections;
         private List<ConnectionRequest> myConnections;
 
         private bool isDebug;
@@ -159,6 +161,7 @@ namespace ConnectionControl
         {
             userList = new List<UserData>();
             myConnections = new List<ConnectionRequest>();
+            awaitingConnections = new List<ConnectionRequest>();
             isConnectedToCloud = false;
             isDebug = true;
             _whatToSendQueue = new Queue();
@@ -333,8 +336,16 @@ namespace ConnectionControl
                                     currConnection  = new ConnectionRequest(src, dest, Convert.ToInt32(connId));
                                     currConnection.prevCCAddr = NCCAddr.ToString();
 
-                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
-                                    whatToSendQueue.Enqueue(pck);
+                                    awaitingConnections.Add(currConnection);
+
+                                    
+                                    //while (awaitingConnections.Count() != 0)
+                                    //{
+                                        //ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
+                                        pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
+                                        whatToSendQueue.Enqueue(pck);
+                                        //awaitingConnections.Remove(temp);
+                                    //}
 
                                 }
                                 catch
@@ -424,7 +435,7 @@ namespace ConnectionControl
                                         tempUser.userMappings.Add(new NodeMapping(incomingAddr, vp, vc, "-", "-", "-", connId));
                                     }
                                     
-                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest + " " + _senderAddr.network+"."+_senderAddr.subnet+".*");
+                                    pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                     whatToSendQueue.Enqueue(pck);
 
                                 }
@@ -1166,11 +1177,29 @@ namespace ConnectionControl
 
         public void sendToNextSubnet()
         {
-            string msg = "REQ_CONN " + currConnection.connId + " " + currConnection.outNodeAddr + " " + currConnection.inNodeAddr 
+            //DUPA
+            while (awaitingConnections.Count() != 0)
+            {
+                ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
+                if (temp.outNodeAddr != "-" && temp.inNodeAddr != "-" && temp.destAddr != "-" && temp.nextCCAddr != "-")
+                {
+                    //pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + temp.srcAddr + " " + temp.destAddr);
+                    //whatToSendQueue.Enqueue(pck);
+                    //awaitingConnections.Remove(temp);
+
+                    string msg = "REQ_CONN " + temp.connId + " " + temp.outNodeAddr + " " + temp.inNodeAddr
+                    + " " + temp.outVP + " " + temp.outVC + " " + temp.destAddr;
+
+                    SPacket pck = new SPacket(myAddr.ToString(), temp.nextCCAddr, msg);
+                    whatToSendQueue.Enqueue(pck);
+                    awaitingConnections.Remove(temp);
+                }
+            }
+            /*string msg = "REQ_CONN " + currConnection.connId + " " + currConnection.outNodeAddr + " " + currConnection.inNodeAddr 
                 + " " + currConnection.outVP + " " + currConnection.outVC + " " + currConnection.destAddr;
 
             SPacket pck = new SPacket(myAddr.ToString(), currConnection.nextCCAddr, msg);
-            whatToSendQueue.Enqueue(pck);
+            whatToSendQueue.Enqueue(pck);*/
 
         }
 

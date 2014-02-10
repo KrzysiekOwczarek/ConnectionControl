@@ -1,13 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
+# Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectionControl", "ConnectionControl\ConnectionControl.csproj", "{448CA88B-F559-484A-AB1D-B69183E3F77A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddressLibrary", "..\AddressLibrary\AddressLibrary\AddressLibrary.csproj", "{791D4070-60E5-4D4A-8F62-D33608C690B8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Packet", "..\Packet\ClassLibrary1\Packet.csproj", "{7C42F514-EA47-44C9-AD87-8FAFC77521DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +15,6 @@ Global
 		{448CA88B-F559-484A-AB1D-B69183E3F77A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{448CA88B-F559-484A-AB1D-B69183E3F77A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{448CA88B-F559-484A-AB1D-B69183E3F77A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{791D4070-60E5-4D4A-8F62-D33608C690B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{791D4070-60E5-4D4A-8F62-D33608C690B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{791D4070-60E5-4D4A-8F62-D33608C690B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{791D4070-60E5-4D4A-8F62-D33608C690B8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7C42F514-EA47-44C9-AD87-8FAFC77521DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7C42F514-EA47-44C9-AD87-8FAFC77521DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7C42F514-EA47-44C9-AD87-8FAFC77521DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7C42F514-EA47-44C9-AD87-8FAFC77521DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
