@@ -339,13 +339,13 @@ namespace ConnectionControl
                                     awaitingConnections.Add(currConnection);
 
                                     
-                                    while (awaitingConnections.Count() != 0)
-                                    {
-                                        ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
-                                        pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + temp.srcAddr + " " + temp.destAddr);
+                                    //while (awaitingConnections.Count() != 0)
+                                    //{
+                                        //ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
+                                        pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + src + " " + dest);
                                         whatToSendQueue.Enqueue(pck);
-                                        awaitingConnections.RemoveAt(awaitingConnections.Count() - 1);
-                                    }
+                                        //awaitingConnections.Remove(temp);
+                                    //}
 
                                 }
                                 catch
@@ -1177,11 +1177,29 @@ namespace ConnectionControl
 
         public void sendToNextSubnet()
         {
-            string msg = "REQ_CONN " + currConnection.connId + " " + currConnection.outNodeAddr + " " + currConnection.inNodeAddr 
+            //DUPA
+            while (awaitingConnections.Count() != 0)
+            {
+                ConnectionRequest temp = awaitingConnections[awaitingConnections.Count() - 1];
+                if (temp.outNodeAddr != "-" && temp.inNodeAddr != "-" && temp.destAddr != "-" && temp.nextCCAddr != "-")
+                {
+                    //pck = new SPacket(myAddr.ToString(), myRCAddr.ToString(), "REQ_ROUTE " + temp.srcAddr + " " + temp.destAddr);
+                    //whatToSendQueue.Enqueue(pck);
+                    //awaitingConnections.Remove(temp);
+
+                    string msg = "REQ_CONN " + temp.connId + " " + temp.outNodeAddr + " " + temp.inNodeAddr
+                    + " " + temp.outVP + " " + temp.outVC + " " + temp.destAddr;
+
+                    SPacket pck = new SPacket(myAddr.ToString(), temp.nextCCAddr, msg);
+                    whatToSendQueue.Enqueue(pck);
+                    awaitingConnections.Remove(temp);
+                }
+            }
+            /*string msg = "REQ_CONN " + currConnection.connId + " " + currConnection.outNodeAddr + " " + currConnection.inNodeAddr 
                 + " " + currConnection.outVP + " " + currConnection.outVC + " " + currConnection.destAddr;
 
             SPacket pck = new SPacket(myAddr.ToString(), currConnection.nextCCAddr, msg);
-            whatToSendQueue.Enqueue(pck);
+            whatToSendQueue.Enqueue(pck);*/
 
         }
 

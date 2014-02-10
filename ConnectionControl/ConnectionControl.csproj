@@ -32,13 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AddressLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\AddressLibrary\AddressLibrary\bin\Debug\AddressLibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="Packet">
-      <HintPath>..\..\Packet\ClassLibrary1\bin\Debug\Packet.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -83,6 +76,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\AddressLibrary\AddressLibrary\AddressLibrary.csproj">
+      <Project>{791d4070-60e5-4d4a-8f62-d33608c690b8}</Project>
+      <Name>AddressLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packet\ClassLibrary1\Packet.csproj">
+      <Project>{7c42f514-ea47-44c9-ad87-8fafc77521dc}</Project>
+      <Name>Packet</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
